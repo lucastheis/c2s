@@ -161,7 +161,7 @@ def main(argv):
 			mean(predictions_, 0),
 			zeros(pad_right)]).reshape(1, -1)
 
-		# store predictions
+		# store predictions and actual outputs
 		predictions.append(predictions_)
 		outputs.append(data[i][1].reshape(1, -1))
 		if i + 1 in training_cells:
@@ -194,6 +194,28 @@ def main(argv):
 	corr_valid = corrcoef(hstack(outputs_valid), hstack(predictions_valid))[0, 1]
 	corr_test  = corrcoef(hstack(outputs_test),  hstack(predictions_test))[0, 1]
 
+	corr       = []
+	corr_train = []
+	corr_valid = []
+	corr_test  = []
+
+	# average predictions and compute correlations
+	for i in range(len(predictions)):
+		predictions[i] = mean(vstack(predictions[i]), 0).reshape(1, -1)
+		corr.append(corrcoef(outputs[i], predictions[i])[0, 1])
+
+	for i in range(len(predictions_train)):
+		predictions_train[i] = mean(vstack(predictions_train[i]), 0).reshape(1, -1)
+		corr_train.append(corrcoef(outputs_train[i], predictions_train[i])[0, 1])
+
+	for i in range(len(predictions_valid)):
+		predictions_valid[i] = mean(vstack(predictions_valid[i]), 0).reshape(1, -1)
+		corr_valid.append(corrcoef(outputs_valid[i], predictions_valid[i])[0, 1])
+
+	for i in range(len(predictions_test)):
+		predictions_test[i] = mean(vstack(predictions_test[i]), 0).reshape(1, -1)
+		corr_test.append(corrcoef(outputs_test[i], predictions_test[i])[0, 1])
+
 	# print results
 	print
 	print 'Number of spikes:'
@@ -207,10 +229,10 @@ def main(argv):
 	print '\t{0:.2f} [bit/s] (test)'.format(loglik_test / log(2.) * sampling_rate)
 	print
 	print 'Correlation:'
-	print '\t{0:.5f} (training)'.format(corr_train)
-	print '\t{0:.5f} (validation)'.format(corr_valid)
-	print '\t{0:.5f} (test)'.format(corr_test)
-	print '\t{0:.5f} (total)'.format(corr)
+	print '\t{0:.5f} (training)'.format(mean(corr_train))
+	print '\t{0:.5f} (validation)'.format(mean(corr_valid))
+	print '\t{0:.5f} (test)'.format(mean(corr_test))
+	print '\t{0:.5f} (total)'.format(mean(corr))
 
 	# save results
 	experiment['training_cells']   = training_cells
