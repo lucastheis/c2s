@@ -18,16 +18,16 @@ from scipy.io import loadmat, savemat
 from cmt.models import STM, GLM, Poisson
 from cmt.nonlinear import ExponentialFunction
 from cmt.tools import generate_data_from_image
-from cmt.transforms import WhiteningTransform
+from cmt.transforms import WhiteningTransform, PCATransform
 from cmt.utils import random_select
 from tools import Experiment
 
 input_mask = asarray([
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]], dtype='bool')
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype='bool')
 output_mask = asarray([
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]], dtype='bool')
+	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype='bool')
 
 # cells used for training
 cells = [5, 7, 48, 19, 50, 12, 17, 18, 28]
@@ -41,6 +41,7 @@ def main(argv):
 	parser.add_argument('-f', '--num_features', type=int, default=5)
 	parser.add_argument('-v', '--num_valid', type=int, default=3)
 	parser.add_argument('-s', '--num_samples', type=int, default=100)
+	parser.add_argument('-p', '--num_pcs', type=int, default=16)
 
 	args = parser.parse_args(argv[1:])
 
@@ -90,7 +91,7 @@ def main(argv):
 
 
 	# preprocessing of input data
-	pre = WhiteningTransform(*data_train)
+	pre = PCATransform(*data_train, num_pcs=args.num_pcs)
 
 
 
@@ -101,8 +102,8 @@ def main(argv):
 	# choose and fit neuron model
 	if args.num_components > 1 or args.num_features > 0:
 		model = STM(
-			dim_in_nonlinear=sum(input_mask[0]),
-			dim_in_linear=sum(input_mask[1]),
+			dim_in_nonlinear=pre.pre_in.shape[0],
+			dim_in_linear=0,#sum(input_mask[1]),
 			num_components=args.num_components,
 			num_features=args.num_features,
 			nonlinearity=ExponentialFunction,
@@ -238,7 +239,10 @@ def main(argv):
 	experiment['training_cells']   = training_cells
 	experiment['validation_cells'] = validation_cells
 
-	experiment['model'] = model
+	experiment['input_mask']  = input_mask
+	experiment['output_mask'] = output_mask
+	experiment['pre']         = pre
+	experiment['model']       = model
 
 	experiment['corr']       = corr
 	experiment['corr_train'] = corr_train

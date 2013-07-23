@@ -18,6 +18,8 @@ cells = [5, 7, 48, 19, 50, 12, 17, 18, 28]
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('--model', '-m', type=str, default='STM')
+	parser.add_argument('--num_components', '-c', type=int, default=-1)
+	parser.add_argument('--num_features', '-f', type=int, default=-1)
 
 	args = parser.parse_args(argv[1:])
 
@@ -41,8 +43,17 @@ def main(argv):
 
 	model_type = GLM if args.model.upper() == 'GLM' else STM
 
+	corr_single = []
+	corr_single_test = []
+
 	for filepath in files:
 		results = Experiment(filepath)
+
+		if args.num_components >= 0 and args.num_components != results['args'].num_components:
+			continue
+
+		if args.num_features >= 0 and args.num_features != results['args'].num_features:
+			continue
 
 		if isinstance(results['model'], model_type):
 			for i in range(len(predictions)):
@@ -50,6 +61,9 @@ def main(argv):
 
 			for i in range(len(predictions_test)):
 				predictions_test[i].append(results['predictions_test'][i])
+
+			corr_single.append(mean(results['corr']))
+			corr_single_test.append(mean(results['corr_test']))
 
 	corr = []
 	corr_test = []
@@ -66,9 +80,17 @@ def main(argv):
 	sem      = std(corr) / sqrt(len(corr))
 	sem_test = std(corr_test) / sqrt(len(corr_test))
 
-	print 'Correlation of average response:'
-	print '\t{0:.5f} (test)'.format(mean(corr_test))
-	print '\t{0:.5f} (total)'.format(mean(corr))
+	print 'Average correlation of single predictions:'
+	print '\t{0:.5f} (test)'.format(mean(corr_single_test))
+	print '\t{0:.5f} (total)'.format(mean(corr_single))
+	print
+	print 'Maximum correlation of single predictions:'
+	print '\t{0:.5f} (test)'.format(max(corr_single_test))
+	print '\t{0:.5f} (total)'.format(max(corr_single))
+	print
+	print 'Correlation of average prediction:'
+	print '\t{0:.5f} +- {1:.5f} (test)'.format(mean(corr_test), sem_test)
+	print '\t{0:.5f} +- {1:.5f} (total)'.format(mean(corr), sem)
 
 	savemat('results/predictions.{0}.mat'.format(args.model.lower()), {'predictions': predictions},
 		oned_as='row', do_compression=True)
