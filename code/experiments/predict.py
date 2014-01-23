@@ -10,7 +10,7 @@ sys.path.append('./code')
 
 from argparse import ArgumentParser
 from itertools import chain
-from numpy import log, int, double, hstack, vstack, zeros, sum, mean, corrcoef
+from numpy import log, int, double, hstack, vstack, zeros, sum, mean, std, corrcoef
 from numpy import asarray, where
 from numpy.linalg import norm
 from numpy.random import permutation
@@ -37,8 +37,8 @@ def main(argv):
 
 	# parse input arguments
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('-n', '--num_components', type=int, default=2)
-	parser.add_argument('-f', '--num_features', type=int, default=5)
+	parser.add_argument('-n', '--num_components', type=int, default=4)
+	parser.add_argument('-f', '--num_features', type=int, default=4)
 	parser.add_argument('-v', '--num_valid', type=int, default=3)
 	parser.add_argument('-s', '--num_samples', type=int, default=100)
 	parser.add_argument('-p', '--num_pcs', type=int, default=16)
@@ -68,8 +68,9 @@ def main(argv):
 	training_cells = [c for i, c in enumerate(cells) if i not in idx]
 
 	for i in range(data.shape[0]):
-		galvo_traces = data[i][0].reshape(1, -1)
-		spike_traces = data[i][1].reshape(1, -1)
+		galvo_traces  = data[i][0].reshape(1, -1)
+		galvo_traces /= (std(galvo_traces) + 1e-8)
+		spike_traces  = data[i][1].reshape(1, -1)
 
 		# extract windows
 		inputs, outputs = generate_data_from_image(
@@ -109,14 +110,23 @@ def main(argv):
 			nonlinearity=ExponentialFunction,
 			distribution=Poisson)
 	else:
-		model = GLM(sum(input_mask), ExponentialFunction, Poisson)
+		model = GLM(pre.pre_in.shape[0], ExponentialFunction, Poisson)
 
-	model.train(*chain(pre(*data_train), pre(*data_valid)), parameters={
+	converged = model.train(*chain(pre(*data_train), pre(*data_valid)), parameters={
 		'verbosity': 1,
 		'max_iter': 1000,
 		'val_iter': 1,
 		'val_look_ahead': 100,
 		'threshold': 1e-9})
+	converged = model.train(*chain(pre(*data_train), pre(*data_valid)), parameters={
+		'verbosity': 1,
+		'max_iter': 1000,
+		'val_iter': 1,
+		'val_look_ahead': 20,
+		'threshold': 1e-9})
+
+	if not converged:
+		return 0
 
 
 

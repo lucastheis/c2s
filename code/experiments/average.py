@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Averages responses over multiple experiments with different training/validation splits.
 """
@@ -9,6 +11,7 @@ sys.path.append('./code')
 from argparse import ArgumentParser
 from glob import glob
 from numpy import corrcoef, vstack, hstack, std, mean, sqrt
+from numpy.random import permutation
 from scipy.io import loadmat, savemat
 from tools import Experiment
 from cmt.models import GLM, STM
@@ -92,7 +95,7 @@ def main(argv):
 	print '\t{0:.5f} +- {1:.5f} (test)'.format(mean(corr_test), sem_test)
 	print '\t{0:.5f} +- {1:.5f} (total)'.format(mean(corr), sem)
 
-	savemat('results/predictions.{0}.mat'.format(args.model.lower()), {'predictions': predictions},
+	savemat('results/predictions.{0}.mat'.format(args.model.lower()), {'predictions': predictions, 'corr': corr},
 		oned_as='row', do_compression=True)
 
 	return 0
