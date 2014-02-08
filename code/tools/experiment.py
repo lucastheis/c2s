@@ -5,9 +5,9 @@ Manage and display experimental results.
 """
 
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
-__author__ = 'Lucas Theis <lucas@tuebingen.mpg.de>'
+__author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 import sys
 import os
@@ -380,6 +380,11 @@ class Experiment:
 
 	def __setitem__(self, key, value):
 		self.results[key] = value
+
+
+
+	def __delitem__(self, key):
+		del self.results[key]
 
 
 
