@@ -9,266 +9,73 @@ import sys
 sys.path.append('./code')
 
 from argparse import ArgumentParser
-from itertools import chain
-from numpy import log, int, double, hstack, vstack, zeros, sum, mean, std, corrcoef
-from numpy import asarray, where
-from numpy.linalg import norm
-from numpy.random import permutation
-from scipy.io import loadmat, savemat
-from cmt.models import STM, GLM, Poisson
-from cmt.nonlinear import ExponentialFunction
-from cmt.tools import generate_data_from_image
-from cmt.transforms import WhiteningTransform, PCATransform
-from cmt.utils import random_select
+from pickle import load
+from numpy import corrcoef, mean
 from tools import Experiment
-
-input_mask = asarray([
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype='bool')
-output_mask = asarray([
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype='bool')
-
-# cells used for training
-cells = [5, 7, 48, 19, 50, 12, 17, 18, 28]
+from calcium import predict, preprocess
 
 def main(argv):
 	experiment = Experiment()
 
 	# parse input arguments
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('-n', '--num_components', type=int, default=4)
-	parser.add_argument('-f', '--num_features', type=int, default=4)
-	parser.add_argument('-v', '--num_valid', type=int, default=3)
-	parser.add_argument('-s', '--num_samples', type=int, default=100)
-	parser.add_argument('-p', '--num_pcs', type=int, default=16)
+	parser.add_argument('--models', '-m', type=str, required=True)
+	parser.add_argument('--dataset', '-d', type=str, required=True)
+	parser.add_argument('--preprocess', '-p', type=int, default=0)
 
 	args = parser.parse_args(argv[1:])
 
+	with open(args.dataset) as handle:
+		data = load(handle)
 
+	if args.preprocess:
+		data = preprocess(data)
 
-	### DATA HANDLING
+	results = Experiment(args.models)
 
-	print 'Preprocessing...'
+	data = predict(data, results['models'], verbosity=1)
 
-	# load data
-	data = loadmat('data/data.mat')['Data'].ravel()
+	cc_all = []
+	fps_all = []
 
-	# generate inputs and outputs for training and testing
-	inputs_train  = []
-	inputs_valid  = []
-	inputs_test   = []
-	outputs_train = []
-	outputs_valid = []
-	outputs_test  = []
+	for cell_id, entry in enumerate(data):
+		predictions = entry['predictions'].ravel()
+		spikes = entry['spikes'].ravel()
+		fps = entry['fps']
+		fps_all.append([fps])
+		cc = corrcoef(predictions, spikes)[0, 1]
+		cc_all.append([cc])
 
-	# split cells into training and validation set
-	idx = random_select(args.num_valid, len(cells))
-	validation_cells = [c for i, c in enumerate(cells) if i in idx]
-	training_cells = [c for i, c in enumerate(cells) if i not in idx]
+		print '{0:5}'.format(cell_id),
+		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
 
-	for i in range(data.shape[0]):
-		galvo_traces  = data[i][0].reshape(1, -1)
-		galvo_traces /= (std(galvo_traces) + 1e-8)
-		spike_traces  = data[i][1].reshape(1, -1)
+		for _ in range(3):
+			# reduce sampling rate
+			if spikes.size % 2:
+				spikes = spikes[:-2:2] + spikes[1::2]
+				predictions = predictions[:-2:2] + predictions[1::2]
+			else:
+				spikes = spikes[::2] + spikes[1::2]
+				predictions = predictions[::2] + predictions[1::2]
 
-		# extract windows
-		inputs, outputs = generate_data_from_image(
-			vstack([galvo_traces, spike_traces]), input_mask, output_mask)
+			fps /= 2.
+			fps_all[-1].append(fps)
+			cc = corrcoef(predictions, spikes)[0, 1]
+			cc_all[-1].append(cc)
 
-		if i + 1 in training_cells:
-			inputs_train.append(inputs)
-			outputs_train.append(outputs)
-		elif i + 1 in validation_cells:
-			inputs_valid.append(inputs)
-			outputs_valid.append(outputs)
-		else:
-			inputs_test.append(inputs)
-			outputs_test.append(outputs)
+			print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
 
-	data_train = hstack(inputs_train), hstack(outputs_train)
-	data_valid = hstack(inputs_valid), hstack(outputs_valid)
-	data_test  = hstack(inputs_test),  hstack(outputs_test)
+		print
 
+	
+	print '=' * 70
+	print '{0:5}'.format('Avg.'),
 
-	# preprocessing of input data
-	pre = PCATransform(*data_train, num_pcs=args.num_pcs)
+	cc_all = mean(cc_all, 0)
+	fps_all = mean(fps_all, 0)
 
-
-
-	### MODEL FITTING
-
-	print 'Training...'
-
-	# choose and fit neuron model
-	if args.num_components > 1 or args.num_features > 0:
-		model = STM(
-			dim_in_nonlinear=pre.pre_in.shape[0],
-			dim_in_linear=0,#sum(input_mask[1]),
-			num_components=args.num_components,
-			num_features=args.num_features,
-			nonlinearity=ExponentialFunction,
-			distribution=Poisson)
-	else:
-		model = GLM(pre.pre_in.shape[0], ExponentialFunction, Poisson)
-
-	converged = model.train(*chain(pre(*data_train), pre(*data_valid)), parameters={
-		'verbosity': 1,
-		'max_iter': 1000,
-		'val_iter': 1,
-		'val_look_ahead': 100,
-		'threshold': 1e-9})
-	converged = model.train(*chain(pre(*data_train), pre(*data_valid)), parameters={
-		'verbosity': 1,
-		'max_iter': 1000,
-		'val_iter': 1,
-		'val_look_ahead': 20,
-		'threshold': 1e-9})
-
-	if not converged:
-		return 0
-
-
-
-	### PREDICTION
-
-	print 'Predicting...'
-
-	# generate sample spike trains
-	predictions       = []
-	predictions_train = []
-	predictions_valid = []
-	predictions_test  = []
-
-	outputs       = []
-	outputs_train = []
-	outputs_valid = []
-	outputs_test  = []
-
-	pad_left  = int(where(output_mask[1])[0] + .5)
-	pad_right = output_mask.shape[1] - pad_left - 1
-
-	for i in range(data.shape[0]):
-		# pick preprocessed inputs
-		if i + 1 in training_cells:
-			inputs = inputs_train[0]
-			inputs_train = inputs_train[1:]
-		elif i + 1 in validation_cells:
-			inputs = inputs_valid[0]
-			inputs_valid = inputs_valid[1:]
-		else:
-			inputs = inputs_test[0]
-			inputs_test = inputs_test[1:]
-
-		# sample responses
-		predictions_ = []
-		for j in range(args.num_samples):
-			predictions_.append(model.sample(pre(inputs)))
-		predictions_ = vstack(predictions_)
-
-		# average responses
-		predictions_ = hstack([
-			zeros(pad_left),
-			mean(predictions_, 0),
-			zeros(pad_right)]).reshape(1, -1)
-
-		# store predictions and actual outputs
-		predictions.append(predictions_)
-		outputs.append(data[i][1].reshape(1, -1))
-		if i + 1 in training_cells:
-			predictions_train.append(predictions[-1])
-			outputs_train.append(outputs[-1])
-		elif i + 1 in validation_cells:
-			predictions_valid.append(predictions[-1])
-			outputs_valid.append(outputs[-1])
-		else:
-			predictions_test.append(predictions[-1])
-			outputs_test.append(outputs[-1])
-
-
-
-	### EVALUATION
-
-	print 'Evaluating...'
-
-	# average log-likelihood in bits per bin
-	loglik_train = mean(model.loglikelihood(*pre(*data_train)))
-	loglik_valid = mean(model.loglikelihood(*pre(*data_valid)))
-	loglik_test  = mean(model.loglikelihood(*pre(*data_test)))
-
-	# average sampling rate
-	sampling_rate = mean([data[i][2] for i in range(data.shape[0])])
-
-	# compute correlation
-	corr       = corrcoef(hstack(outputs),       hstack(predictions))[0, 1]
-	corr_train = corrcoef(hstack(outputs_train), hstack(predictions_train))[0, 1]
-	corr_valid = corrcoef(hstack(outputs_valid), hstack(predictions_valid))[0, 1]
-	corr_test  = corrcoef(hstack(outputs_test),  hstack(predictions_test))[0, 1]
-
-	corr       = []
-	corr_train = []
-	corr_valid = []
-	corr_test  = []
-
-	# average predictions and compute correlations
-	for i in range(len(predictions)):
-		predictions[i] = mean(vstack(predictions[i]), 0).reshape(1, -1)
-		corr.append(corrcoef(outputs[i], predictions[i])[0, 1])
-
-	for i in range(len(predictions_train)):
-		predictions_train[i] = mean(vstack(predictions_train[i]), 0).reshape(1, -1)
-		corr_train.append(corrcoef(outputs_train[i], predictions_train[i])[0, 1])
-
-	for i in range(len(predictions_valid)):
-		predictions_valid[i] = mean(vstack(predictions_valid[i]), 0).reshape(1, -1)
-		corr_valid.append(corrcoef(outputs_valid[i], predictions_valid[i])[0, 1])
-
-	for i in range(len(predictions_test)):
-		predictions_test[i] = mean(vstack(predictions_test[i]), 0).reshape(1, -1)
-		corr_test.append(corrcoef(outputs_test[i], predictions_test[i])[0, 1])
-
-	# print results
-	print
-	print 'Number of spikes:'
-	print '\t{0} (training)'.format(sum(data_train[1]))
-	print '\t{0} (validation)'.format(sum(data_valid[1]))
-	print '\t{0} (test)'.format(sum(data_test[1]))
-	print
-	print 'Log-likelihood:'
-	print '\t{0:.2f} [bit/s] (training)'.format(loglik_train / log(2.) * sampling_rate)
-	print '\t{0:.2f} [bit/s] (validation)'.format(loglik_valid / log(2.) * sampling_rate)
-	print '\t{0:.2f} [bit/s] (test)'.format(loglik_test / log(2.) * sampling_rate)
-	print
-	print 'Correlation:'
-	print '\t{0:.5f} (training)'.format(mean(corr_train))
-	print '\t{0:.5f} (validation)'.format(mean(corr_valid))
-	print '\t{0:.5f} (test)'.format(mean(corr_test))
-	print '\t{0:.5f} (total)'.format(mean(corr))
-
-	# save results
-	experiment['training_cells']   = training_cells
-	experiment['validation_cells'] = validation_cells
-
-	experiment['input_mask']  = input_mask
-	experiment['output_mask'] = output_mask
-	experiment['pre']         = pre
-	experiment['model']       = model
-
-	experiment['corr']       = corr
-	experiment['corr_train'] = corr_train
-	experiment['corr_valid'] = corr_valid
-	experiment['corr_test']  = corr_test
-
-	experiment['loglik_train'] = loglik_train
-	experiment['loglik_valid'] = loglik_valid
-	experiment['loglik_test']  = loglik_test
-
-	experiment['predictions']       = predictions
-	experiment['predictions_train'] = predictions_train
-	experiment['predictions_valid'] = predictions_valid
-	experiment['predictions_test']  = predictions_test
-
-	experiment.save('results/predictions.{0}.{1}.xpck')
+	for cc, fps in zip(cc_all, fps_all):
+		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
 
 	return 0
 
