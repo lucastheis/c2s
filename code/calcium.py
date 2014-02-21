@@ -2,17 +2,25 @@
 Tools for the prediction of spike trains from calcium traces.
 """
 
-from scipy.signal import resample
-from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
-from numpy import vstack, hstack, argmin
-from numpy.random import rand
 from copy import copy, deepcopy
+from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
+from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, max, square, sum, diff
+from numpy import corrcoef, array
+from numpy.random import rand
+from scipy.signal import resample
+from scipy.stats import poisson
+from scipy.interpolate import interp1d
+from scipy.optimize import minimize
 from cmt.models import MCGSM, STM, Poisson
 from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
 from cmt.tools import generate_data_from_image, extract_windows
 from cmt.transforms import PCATransform
 from cmt.utils import random_select
-from numpy import any, isinf
+
+try:
+	from roc import real_ROC
+except:
+	pass
 
 def preprocess(data, fps=100., verbosity=0):
 	"""
@@ -30,7 +38,7 @@ def preprocess(data, fps=100., verbosity=0):
 	@param fps: desired sampling rate of signals
 
 	@type  verbosity: int
-	@param verbosity: output progress if positive
+	@param verbosity: if positive, print messages indicating progress
 
 	@rtype: list
 	@return: list of preprocessed recordings
@@ -41,6 +49,8 @@ def preprocess(data, fps=100., verbosity=0):
 	for k in range(len(data)):
 		if verbosity > 0:
 			print 'Preprocessing calcium trace {0}...'.format(k)
+
+		data[k]['fps'] = float(data[k]['fps'])
 
 		# remove any linear trends
 		x = arange(data[k]['calcium'].size)
@@ -53,7 +63,7 @@ def preprocess(data, fps=100., verbosity=0):
 		calcium80 = percentile(data[k]['calcium'], 80)
 
 		if calcium80 - calcium05 > 0.:
-			data[k]['calcium'] = (data[k]['calcium'] - calcium05) / (calcium80 - calcium05)
+			data[k]['calcium'] = (data[k]['calcium'] - calcium05) / float(calcium80 - calcium05)
 
 		# compute spike times if binned spikes are given
 		if 'spikes' in data[k] and 'spike_times' not in data[k]:
@@ -80,6 +90,7 @@ def preprocess(data, fps=100., verbosity=0):
 		if 'spike_times' in data[k] and ('spikes' not in data[k] or num_samples != data[k]['spikes'].size):
 			# spike times in bins
 			spike_times = asarray(data[k]['spike_times'] * (data[k]['fps'] / 1000.), dtype=int).ravel()
+			spike_times = spike_times[spike_times < num_samples]
 
 			# create binned spike train
 			data[k]['spikes'] = zeros([1, num_samples], dtype='uint16')
@@ -130,7 +141,7 @@ def train(data,
 	model_parameters.setdefault('nonlinearity', ExponentialFunction)
 	model_parameters.setdefault('distribution', Poisson)
 
-	training_parameters.setdefault('max_iter', 1000)
+	training_parameters.setdefault('max_iter', 3000)
 	training_parameters.setdefault('val_iter', 1)
 	training_parameters.setdefault('val_look_ahead', 100)
 	training_parameters.setdefault('threshold', 1e-9)
@@ -243,6 +254,18 @@ def train(data,
 def predict(data, results, verbosity=1):
 	"""
 	Predicts spike trains from calcium traces using spiking neuron models.
+
+	@type  data: list
+	@param data: list of dictionaries containing calcium/fluorescence traces
+
+	@type  results: dict
+	@param results: dictionary containing results of training procedure
+
+	@type  verbosity: int
+	@param verbosity: if positive, print messages indicating progress
+
+	@rtype: list
+	@return: returns a list of dictionaries like C{data} but 
 	"""
 
 	if type(data) is dict:
@@ -268,15 +291,191 @@ def predict(data, results, verbosity=1):
 			# compute conditional expectation
 			predictions.append(model.predict(entry['inputs']).ravel())
 		
+		# average predicted firing rate
+		avg = mean(predictions)
+
 		entry['predictions'] = hstack([
-			zeros(pad_left),
+			zeros(pad_left) + avg,
 			mean(predictions, 0),
-			zeros(pad_right)]).reshape(1, -1)
+			zeros(pad_right) + avg]).reshape(1, -1)
 
 		# inputs no longer needed
 		del entry['inputs']
 
 	return data
+
+
+
+def evaluate(data, method='corr', **kwargs):
+	"""
+	Evaluates predictions using either Pearson's correlation, log-likelihood, information rates,
+	or area under the ROC curve.
+
+	@type  data: list
+	@param data: list of dictionaries as produced by L{predict}
+
+	@type  method: string
+	@param method: either 'loglik', 'info', 'corr', or 'auc' (default: 'corr')
+
+	@type  downsampling: int
+	@param downsampling: downsample spike trains and predictions by this factor before evaluation (default: 1)
+
+	@type  optimize: bool
+	@param optimize: find optimal point-wise monotonic nonlinearity before evaluation of log-likelihood (default: True)
+
+	@type  regularize: int
+	@param regularize: regularize point-wise monotonic nonlinearity to be smooth (default: 5e-3)
+
+	@type  verbosity: int
+	@param verbosity: controls output during optimization of nonlinearity (default: 2)
+
+	@type  return_all: bool
+	@param return_all: if true, return additional information and not just performance (default: False)
+
+	@rtype: ndarray
+	@return: a value for each cell
+	"""
+
+	kwargs.setdefault('downsampling', 1)
+	kwargs.setdefault('num_support', 10)
+	kwargs.setdefault('regularize', 5e-3)
+	kwargs.setdefault('optimize', True)
+	kwargs.setdefault('return_all', False)
+	kwargs.setdefault('verbosity', 2)
+
+	if 'downsample' in kwargs:
+		print 'Did you mean `downsampling`?'
+		return
+
+	if method.lower().startswith('c'):
+		corr = []
+
+		# compute correlations
+		for entry in data:
+			corr.append(
+				corrcoef(
+					downsample(entry['predictions'], kwargs['downsampling']),
+					downsample(entry['spikes'], kwargs['downsampling']))[0, 1])
+
+		return array(corr)
+
+	elif method.lower().startswith('a'):
+		try:
+			auc = []
+
+			# compute area under ROC curve
+			for entry in data:
+				auc.append(
+					real_ROC(
+						downsample(entry['predictions'], kwargs['downsampling']),
+						downsample(entry['spikes'], kwargs['downsampling']) > .5)[0])
+
+			return array(auc)
+
+		except NameError:
+			print '`real_ROC` is not defined. You probably still need to compile `roc.pyx` using Cython.'
+
+	else:
+		# downsample predictions and spike trains
+		spikes = [downsample(entry['spikes'], kwargs['downsampling']) for entry in data]
+		predictions = [downsample(entry['predictions'], kwargs['downsampling']) for entry in data]
+
+		if kwargs['optimize']:
+			# find optimal point-wise monotonic function
+			f = optimize_predictions(
+				hstack(predictions),
+				hstack(spikes),
+				kwargs['num_support'],
+				kwargs['regularize'],
+				kwargs['verbosity'])
+		else:
+			f = lambda x: x
+
+		# for conversion into bit/s
+		factor = 1. / kwargs['downsampling'] / log(2.)
+
+		# average firing rate (Hz) over all cells
+		firing_rate = mean(hstack([s * data[k]['fps'] for k, s in enumerate(spikes)]))
+
+		# estimate log-likelihood and marginal entropies
+		loglik, entropy = [], []
+		for k in range(len(data)):
+			loglik.append(mean(poisson.logpmf(spikes[k], f(predictions[k]))) * data[k]['fps'] * factor)
+			entropy.append(-mean(poisson.logpmf(spikes[k], firing_rate / data[k]['fps'])) * data[k]['fps'] * factor)
+
+		if method.lower().startswith('l'):
+			if return_all:
+				return array(loglik), array(entropy), f
+			else:
+				# return log-likelihood
+				return array(loglik)
+		else:
+			# return information rates
+			return array(loglik) + array(entropy)
+
+
+
+def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-3, verbosity=1):
+	"""
+	Fits a monotonic piecewise linear function to maximize the Poisson likelihood of
+	firing rate predictions interpreted as Poisson rate parameter.
+
+	@type  predictions: array_like
+	@param predictions: predicted firing rates
+
+	@type  spikes: array_like
+	@param spikes: true spike counts
+
+	@type  num_support: int
+	@param num_support: number of support points of the piecewise linear function
+
+	@type  regularize: float
+	@param regularize: strength of regularization for smoothness
+
+	@rtype: interp1d
+	@return: a piecewise monotonic function
+	"""
+
+	# support points of piece-wise linear function
+	M = max(predictions) + 1
+	x = linspace(0, M, num_support)
+
+	def objf(y):
+		global y_
+
+		# construct piece-wise linear function
+		f = interp1d(x, y)
+
+		# compute predicted firing rates
+		l = f(predictions) + 1e-16
+
+		# compute negative log-likelihood (ignoring constants)
+		K = mean(l - spikes * log(l)) + regularize * sum(square(diff(diff(y))))
+
+		return K
+
+	class MonotonicityConstraint:
+		def __init__(self, i):
+			self.i = i
+
+		def __call__(self, y):
+			return y[self.i] - y[self.i - 1]
+
+	# monotonicity and non-negativity constraint
+	constraints = [{'type': 'ineq', 'fun': MonotonicityConstraint(i)} for i in range(1, x.size)]
+	constraints.extend([{'type': 'ineq', 'fun': lambda y: y[0]}])
+
+	# fit monotonic function
+	res = minimize(
+		fun=objf,
+		x0=x + 1e-6,
+		method='SLSQP',
+		tol=1e-9,
+		constraints=constraints,
+		options={'disp': 1, 'iprint': verbosity})
+
+	# construct monotonic piecewise linear function
+	return interp1d(x, res.x, bounds_error=False, fill_value=res.x[-1])
 
 
 
@@ -337,3 +536,79 @@ def robust_linear_regression(x, y, num_scales=3, max_iter=1000):
 	b = (b + float(model.means)) - a * m
 
 	return a, b
+
+
+
+def downsample(signal, factor):
+	"""
+	Downsample signal by averaging neighboring values.
+
+	@type  signal: array_like
+	@param signal: one-dimensional signal to be downsampled
+
+	@type  factor: int
+	@param factor: this many neighboring values are averaged
+
+	@rtype: ndarray
+	@return: downsampled signal
+	"""
+
+	if factor < 2:
+		return asarray(signal).ravel()
+	return convolve(asarray(signal).ravel(), ones(factor), 'valid')[::factor]
+
+
+
+def responses(data, results, verbosity=0):
+	"""
+	Compute nonlinear component responses of STM to calcium.
+
+	@type  data: list
+	@param data: list of dictionaries containing calcium/fluorescence traces
+
+	@type  results: dict
+	@param results: dictionary containing results of training procedure
+
+	@type  verbosity: int
+	@param verbosity: if positive, print messages indicating progress
+
+	@rtype: list
+	@return: list of dictionaries as input, but with added responses
+	"""
+
+	if type(data) is dict:
+		data = [data]
+	if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
+		data = [{'calcium': data}]
+
+	for entry in data:
+		# extract windows from fluorescence trace and reduce dimensionality
+		entry['inputs'] = extract_windows(
+			entry['calcium'], sum(results['input_mask'][0]))
+		entry['inputs'] = results['pca'](entry['inputs'])
+
+	pad_left  = int(where(results['output_mask'][1])[0] + .5)
+	pad_right = results['output_mask'].shape[1] - pad_left - 1
+
+	for k, entry in enumerate(data):
+		if verbosity > 0:
+			print 'Computing responses for cell {0}...'.format(k)
+
+		# pick first model
+		if type(results) is STM:
+			model = results
+		else:
+			model = results['models'][0]
+
+		# compute nonlinear component responses
+		responses = model.nonlinear_responses(entry['inputs'])
+
+		entry['responses'] = hstack([
+			zeros([responses.shape[0], pad_left]),
+			responses,
+			zeros([responses.shape[0], pad_right])])
+
+		# inputs no longer needed
+		del entry['inputs']
+
+	return data
