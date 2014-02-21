@@ -1,3 +1,7 @@
+"""
+Generates bar plots of correlations and information rates.
+"""
+
 import os
 import sys
 
@@ -50,6 +54,10 @@ methods = ['STM', 'FOO', 'SOO', 'YAK', 'RAW']
 
 
 def get_corr(filepath, fps=25.):
+	"""
+	Extracts average correlation at given sampling rate from experiment.
+	"""
+
 	if not os.path.exists(filepath):
 		print filepath, 'does not exist.'
 		return 0., 0.
@@ -68,6 +76,10 @@ def get_corr(filepath, fps=25.):
 
 
 def get_corr_all(filepath, fps=25.):
+	"""
+	Extracts all correlation at given sampling rate from experiment.
+	"""
+
 	results = Experiment(filepath)
 	idx = argmin(abs(mean(results['fps'], 1) - fps))
 	return results['correlations'][idx]
@@ -75,6 +87,10 @@ def get_corr_all(filepath, fps=25.):
 
 
 def get_info(filepath, fps=25.):
+	"""
+	Extracts average information rate at given sampling rate from experiment.
+	"""
+
 	if not os.path.exists(filepath):
 		print filepath, 'does not exist.'
 		return 0., 0.
@@ -92,15 +108,30 @@ def get_info(filepath, fps=25.):
 
 
 def get_info_all(filepath, fps=25.):
+	"""
+	Extracts all information rates at given sampling rate from experiment.
+	"""
+
 	results = Experiment(filepath)
 	idx = argmin(abs(mean(results['fps'], 1) - fps))
 	return asarray(results['entropy'][idx]) + asarray(results['loglik'][idx])
 
 
 
-def sem_lm(values, fps=25.):
+def sem_lm(values):
 	"""
 	Compute Loftus & Masson's (1994) standard error.
+
+	@type  values: ndarray
+	@param values: NxM array where N is the number of methods and M is the number of cells
+
+	@rtype: float
+	@return: Loftus & Masson standard error
+
+	B{References:}
+
+	- G. R. Loftus and M. E. J. Masson, Using confidence intervals in within-subject designs, 1994
+	- V. H. Franz and G. R. Loftus, Standard errors and confidence intervals in within-subjects designs, 2012
 	"""
 
 	values = asarray(values)
@@ -110,8 +141,10 @@ def sem_lm(values, fps=25.):
 
 	sem_diff = zeros([M, M])
 
+	# compute standard errors of differences between methods
 	for i in range(M):
-		for j in range(M):
+		for j in range(i + 1, M):
+			# differences in performance between methods i and j
 			diffs = values[i] - values[j]
 			sem_diff[i, j] = std(diffs, ddof=1) / sqrt(N)
 
