@@ -253,7 +253,7 @@ def train(data,
 
 def predict(data, results, verbosity=1):
 	"""
-	Predicts spike trains from calcium traces using spiking neuron models.
+	Predicts firing rates from calcium traces using spiking neuron models.
 
 	@type  data: list
 	@param data: list of dictionaries containing calcium/fluorescence traces
@@ -345,6 +345,10 @@ def evaluate(data, method='corr', **kwargs):
 
 	if 'downsample' in kwargs:
 		print 'Did you mean `downsampling`?'
+		return
+
+	if 'regularization' in kwargs:
+		print 'Did you mean `regularize`?'
 		return
 
 	if method.lower().startswith('c'):

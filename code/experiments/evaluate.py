@@ -76,7 +76,7 @@ def main(argv):
 		for entry in data:
 			fps[-1].append(entry['fps'] / ds)
 
-		if args.method.startswith('c'):
+		if args.method.startswith('c') or args.method.startswith('a'):
 			# compute correlations
 			R = evaluate(data, method=args.method,
 				optimize=args.optimize,
