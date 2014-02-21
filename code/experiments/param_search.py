@@ -24,12 +24,12 @@ def main(argv):
 	parser.add_argument('--num_features',    '-f', type=int,   nargs='+', default=[0, 1, 2, 3, 4])
 	parser.add_argument('--num_valid',       '-v', type=int,   nargs='+', default=[0, 1, 2, 3, 4, 5])
 	parser.add_argument('--var_explained',   '-e', type=float, nargs='+', default=arange(85, 100))
-	parser.add_argument('--window_length',   '-w', type=float, nargs='+', default=arange(500, 1500, 100))
+	parser.add_argument('--window_length',   '-w', type=float, nargs='+', default=arange(500, 1501, 100))
 	parser.add_argument('--num_models',      '-m', type=int,   default=3)
 	parser.add_argument('--keep_all',        '-k', type=int,   default=0)
 	parser.add_argument('--finetune',        '-n', type=int,   default=1)
 	parser.add_argument('--min_repetitions', '-r', type=int,   default=2)
-	parser.add_argument('--max_repetitions', '-s', type=int,   default=20)
+	parser.add_argument('--max_repetitions', '-s', type=int,   default=10)
 	parser.add_argument('--max_iter',        '-i', type=int,   default=10)
 	parser.add_argument('--alpha',           '-a', type=float, default=.05)
 	parser.add_argument('--preprocess',      '-p', type=int,   default=0)
@@ -142,22 +142,23 @@ def main(argv):
 						corr.append(corrcoef(entry['predictions'], entry['spikes'])[0, 1])
 					performance[k].append(mean(corr))
 
-				print key
-				print args.__dict__[key]
-				for perf in performance:
+				# for each parameter, compute probability that expected performance is maximal
+				prob, _ = max_corr(performance)
+
+				for k, perf in enumerate(performance):
+					print '{0} = {1}: '.format(key, args.__dict__[key][k]),
 					for val in perf:
 						print '{0:.3f} '.format(val),
-					print
-
-			# for each parameter, compute probability that expected performance is maximal
-			prob, _ = max_corr(performance)
+					print '({0:.1f}%)'.format(prob[k] * 100.)
 
 			# pick parameter which most likely yields best expected performance
 			update_params(key, args.__dict__[key][argmax(prob)])
 
 			print 'Current parameters:'
-			for key in ['window_length', 'var_explained', 'num_components', 'num_features', 'num_valid']:
+			for key in ['window_length', 'var_explained', 'num_valid']:
 				print '{0} = {1}'.format(key, params[key])
+			for key in ['num_components', 'num_features']:
+				print '{0} = {1}'.format(key, params['model_parameters'][key])
 
 	return 0
 
