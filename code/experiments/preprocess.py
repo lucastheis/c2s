@@ -17,6 +17,7 @@ def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('--input', '-i', type=str, required=True)
 	parser.add_argument('--output', '-o', type=str, required=True)
+	parser.add_argument('--fps', '-f', type=float, default=100.)
 	parser.add_argument('--matlab', '-m', type=str, default='')
 	parser.add_argument('--verbosity', '-v', type=int, default=1)
 
@@ -25,7 +26,7 @@ def main(argv):
 	with open(args.input) as handle:
 		data = load(handle)
 
-	data = preprocess(data, verbosity=args.verbosity)
+	data = preprocess(data, fps=args.fps, verbosity=args.verbosity)
 
 	with open(args.output, 'w') as handle:
 		dump(data, handle)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Measure the performance of STM based spike prediction by repeatedly
+Measure the performance of NNP based spike prediction by repeatedly
 using all but one cell for training and the remaining cell for testing.
 """
 
@@ -15,7 +15,8 @@ from pickle import load
 from numpy import mean, std, corrcoef, sqrt
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from calcium import train, predict, preprocess
+from calcium import train, predict, preprocess, generate_inputs_and_outputs
+from nnp import NNP
 from tools import Experiment
 
 def main(argv):
@@ -24,12 +25,8 @@ def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 
 	parser.add_argument('--dataset',        '-d', type=str,   required=True)
-	parser.add_argument('--num_components', '-c', type=int,   default=3)
-	parser.add_argument('--num_features',   '-f', type=int,   default=2)
+	parser.add_argument('--num_hiddens',    '-n', type=int,   default=[3], nargs='+')
 	parser.add_argument('--num_models',     '-m', type=int,   default=4)
-	parser.add_argument('--keep_all',       '-k', type=int,   default=1)
-	parser.add_argument('--finetune',       '-n', type=int,   default=0)
-	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
 	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
@@ -49,21 +46,18 @@ def main(argv):
 	for i in range(len(data)):
 		print 'Test cell: {0}'.format(i)
 
-		# train on all cells but cell i
-		results = train(
+		inputs, outputs, results = generate_inputs_and_outputs(
 			data=[entry for j, entry in enumerate(data) if j != i],
-			num_valid=args.num_valid,
-			num_models=args.num_models,
-			var_explained=args.var_explained,
 			window_length=args.window_length,
-			keep_all=args.keep_all,
-			finetune=args.finetune,
-			model_parameters={
-					'num_components': args.num_components,
-					'num_features': args.num_features},
-			training_parameters={
-				'verbosity': 0},
-			verbosity=1)
+			var_explained=args.var_explained)
+
+		results['models'] = []
+
+		for _ in range(args.num_models):
+			nnp = NNP(inputs.shape[0], args.num_hiddens)
+			nnp.train(inputs, outputs)
+
+			results['models'].append(nnp)
 
 		# predict responses of cell i
 		predictions.append(

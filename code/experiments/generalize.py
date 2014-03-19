@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Trains STMs for the prediction of spikes from calcium traces.
+Trains STMs on one dataset and predict responses of a second dataset.
 """
 
 import os
@@ -22,22 +22,24 @@ def main(argv):
 
 	parser = ArgumentParser(argv[0], description=__doc__)
 
-	parser.add_argument('--dataset',        '-d', type=str,   required=True)
-	parser.add_argument('--num_components', '-c', type=int,   default=randint(1, 5))
-	parser.add_argument('--num_features',   '-f', type=int,   default=randint(0, 5))
-	parser.add_argument('--num_models',     '-m', type=int,   default=randint(1, 5))
-	parser.add_argument('--keep_all',       '-k', type=int,   default=randint(0, 2))
-	parser.add_argument('--finetune',       '-n', type=int,   default=randint(0, 2))
-	parser.add_argument('--num_train',      '-t', type=int,   default=randint(6, 15))
-	parser.add_argument('--num_valid',      '-v', type=int,   default=randint(0, 5))
-	parser.add_argument('--var_explained',  '-e', type=float, default=rand() * 20. + 80)
-	parser.add_argument('--window_length',  '-w', type=float, default=rand() * 1900. + 200.)
+	parser.add_argument('--dataset_train',  '-r', type=str,   required=True)
+	parser.add_argument('--dataset_test',   '-s', type=str,   required=True)
+	parser.add_argument('--num_components', '-c', type=int,   default=3)
+	parser.add_argument('--num_features',   '-f', type=int,   default=2)
+	parser.add_argument('--num_models',     '-m', type=int,   default=4)
+	parser.add_argument('--keep_all',       '-k', type=int,   default=1)
+	parser.add_argument('--finetune',       '-n', type=int,   default=0)
+	parser.add_argument('--num_train',      '-t', type=int,   default=-1)
+	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
+	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
+	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
 	args, _ = parser.parse_known_args(argv[1:])
 
-	with open(args.dataset) as handle:
+	# load training data
+	with open(args.dataset_train) as handle:
 		data = load(handle)
 
 	if args.preprocess:
@@ -48,7 +50,10 @@ def main(argv):
 	### TRAINING
 
 	# pick cells for training
-	training_cells = random_select(args.num_train, len(data))
+	if args.num_train > 0:
+		training_cells = random_select(args.num_train, len(data))
+	else:
+		training_cells = range(len(data))
 
 	models = train([data[cell_id] for cell_id in training_cells],
 		num_valid=args.num_valid,
@@ -68,6 +73,13 @@ def main(argv):
 
 	### PREDICTION
 
+	# load test data
+	with open(args.dataset_test) as handle:
+		data = load(handle)
+
+	if args.preprocess:
+		data = preprocess(data)
+
 	data = predict(data, models, verbosity=1)
 
 
@@ -77,38 +89,24 @@ def main(argv):
 	print 'Evaluating...'
 
 	corr = []
-	corr_train = []
-	corr_test = []
 	predictions = []
 
-	for cell_id, entry in enumerate(data):
+	for entry in data:
 		predictions.append(entry['predictions'])
 		corr.append(corrcoef(entry['predictions'], entry['spikes'])[0, 1])
 
-		if cell_id in training_cells:
-			corr_train.append(corr[-1])
-		else:
-			corr_test.append(corr[-1])
-
 	corr = mean(corr)
-	corr_test = mean(corr_test)
-	corr_train = mean(corr_train)
 
-	print 'Correlation:'
-	print '\t{0:.5f} (training)'.format(corr_train)
-	print '\t{0:.5f} (test)'.format(corr_test)
-	print '\t{0:.5f} (total)'.format(corr)
+	print 'Correlation: {0:.5f}'.format(corr)
 
 	experiment['args'] = args
 	experiment['training_cells'] = training_cells
 	experiment['models'] = models
 	experiment['corr'] = corr
-	experiment['corr_test'] = corr_test
-	experiment['corr_train'] = corr_train
 	experiment['predictions'] = predictions
 
 	if os.path.isdir(args.output):
-		experiment.save(os.path.join(args.output, 'train.{0}.{1}.xpck'))
+		experiment.save(os.path.join(args.output, 'generalize.{0}.{1}.xpck'))
 	else:
 		experiment.save(args.output)
 

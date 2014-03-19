@@ -7,67 +7,59 @@ import sys
 
 sys.path.append('./code')
 
-from numpy import argmin, abs, mean, std, sqrt, square, asarray, zeros, ones, triu
+from numpy import argmax, abs, mean, std, sqrt, square, asarray, zeros, ones, triu
 from pgf import *
 from pgf.colormap import colormaps
 from tools import Experiment
 
-filepath = 'figures/comparison.pdf'
+filepath = 'figures/comparison_native.pdf'
 
 # colors corresponding to the different methods
 cmap = 'jet'
 color_STM = RGB(0, 0, 0)
-color_ST2 = RGB(*colormaps[cmap].colors[0])
 color_STX = RGB(*colormaps[cmap].colors[0])
-color_NNP = RGB(*colormaps[cmap].colors[220])
-color_LNP = RGB(*colormaps[cmap].colors[180])
 color_FOO = RGB(*colormaps[cmap].colors[80])
-color_FO2 = RGB(*colormaps[cmap].colors[90])
 color_SOO = RGB(*colormaps[cmap].colors[120])
 color_RAW = RGB(*colormaps[cmap].colors[180])
 color_YAK = RGB(*colormaps[cmap].colors[220])
 
 # locations of precomputed correlations
-corr_AOD_STM = 'results/correlations.3.stm.xpck'
-corr_AOD_STX = 'results/correlations.3.stmx.xpck'
-corr_AOD_NNP = 'results/correlations.3.nnp5.xpck'
-corr_AOD_LNP = 'results/correlations.3.lnp.xpck'
-corr_AOD_FOO = 'results/correlations.3.fast_oopsi.xpck'
-corr_AOD_SOO = 'results/correlations.3.smc_oopsi.xpck'
-corr_AOD_YAK = 'results/correlations.3.yaksi.xpck'
-corr_AOD_RAW = 'results/correlations.3.raw.xpck'
+corr_AOD_STM = 'results/native/correlations.3.stm.xpck'
+corr_AOD_STX = 'results/native/correlations.3.stmx.xpck'
+corr_AOD_FOO = 'results/native/correlations.3.fast_oopsi.xpck'
+corr_AOD_SOO = 'results/native/correlations.3.smc_oopsi.xpck'
+corr_AOD_YAK = 'results/native/correlations.3.yaksi.xpck'
+corr_AOD_RAW = 'results/native/correlations.3.raw.xpck'
 
-corr_EUL_STM = 'results/correlations.4.stm.xpck'
-corr_EUL_STX = 'results/correlations.4.stmx.xpck'
-corr_EUL_FOO = 'results/correlations.4.fast_oopsi.xpck'
-corr_EUL_SOO = 'results/correlations.4.smc_oopsi.xpck'
-corr_EUL_YAK = 'results/correlations.4.yaksi.xpck'
-corr_EUL_RAW = 'results/correlations.4.raw.xpck'
+corr_EUL_STM = 'results/native/correlations.4.stm.xpck'
+corr_EUL_STX = 'results/native/correlations.4.stmx.xpck'
+corr_EUL_FOO = 'results/native/correlations.4.fast_oopsi.xpck'
+corr_EUL_SOO = 'results/native/correlations.4.smc_oopsi.xpck'
+corr_EUL_YAK = 'results/native/correlations.4.yaksi.xpck'
+corr_EUL_RAW = 'results/native/correlations.4.raw.xpck'
 
 # locations of precomputed likelihoods
-lik_AOD_STM = 'results/likelihoods.3.stm.xpck'
-lik_AOD_STX = 'results/likelihoods.3.stmx.xpck'
-lik_AOD_NNP = 'results/likelihoods.3.nnp5.xpck'
-lik_AOD_LNP = 'results/likelihoods.3.lnp.xpck'
-lik_AOD_FOO = 'results/likelihoods.3.fast_oopsi.xpck'
-lik_AOD_SOO = 'results/likelihoods.3.smc_oopsi.xpck'
-lik_AOD_YAK = 'results/likelihoods.3.yaksi.xpck'
-lik_AOD_RAW = 'results/likelihoods.3.raw.xpck'
+lik_AOD_STM = 'results/native/likelihoods.3.stm.xpck'
+lik_AOD_STX = 'results/native/likelihoods.3.stmx.xpck'
+lik_AOD_FOO = 'results/native/likelihoods.3.fast_oopsi.xpck'
+lik_AOD_SOO = 'results/native/likelihoods.3.smc_oopsi.xpck'
+lik_AOD_YAK = 'results/native/likelihoods.3.yaksi.xpck'
+lik_AOD_RAW = 'results/native/likelihoods.3.raw.xpck'
 
-lik_EUL_STM = 'results/likelihoods.4.stm.xpck'
-lik_EUL_STX = 'results/likelihoods.4.stmx.xpck'
-lik_EUL_FOO = 'results/likelihoods.4.fast_oopsi.xpck'
-lik_EUL_SOO = 'results/likelihoods.4.smc_oopsi.xpck'
-lik_EUL_YAK = 'results/likelihoods.4.yaksi.xpck'
-lik_EUL_RAW = 'results/likelihoods.4.raw.xpck'
+lik_EUL_STM = 'results/native/likelihoods.4.stm.xpck'
+lik_EUL_STX = 'results/native/likelihoods.4.stmx.xpck'
+lik_EUL_FOO = 'results/native/likelihoods.4.fast_oopsi.xpck'
+lik_EUL_SOO = 'results/native/likelihoods.4.smc_oopsi.xpck'
+lik_EUL_YAK = 'results/native/likelihoods.4.yaksi.xpck'
+lik_EUL_RAW = 'results/native/likelihoods.4.raw.xpck'
 
 datasets = ['AOD', 'EUL']
-methods = ['STM', 'STX', 'FOO', 'SOO', 'YAK', 'RAW']
-method_labels = ['STM', 'STM$^*$', 'FAST-OOPSI', 'SMC-OOPSI', 'DECONV', 'RAW']
+methods = ['STM', 'FOO', 'SOO', 'YAK', 'RAW']
+method_labels = ['STM', 'FAST-OOPSI', 'SMC-OOPSI', 'DECONV', 'RAW']
 
 
 
-def get_corr(filepath, fps=25.):
+def get_corr(filepath):
 	"""
 	Extracts average correlation at given sampling rate from experiment.
 	"""
@@ -78,7 +70,7 @@ def get_corr(filepath, fps=25.):
 
 	results = Experiment(filepath)
 
-	idx = argmin(abs(mean(results['fps'], 1) - fps))
+	idx = argmax(abs(mean(results['fps'], 1)))
 
 	N = asarray(results['correlations']).shape[1]
 
@@ -89,18 +81,18 @@ def get_corr(filepath, fps=25.):
 
 
 
-def get_corr_all(filepath, fps=25.):
+def get_corr_all(filepath):
 	"""
 	Extracts all correlation at given sampling rate from experiment.
 	"""
 
 	results = Experiment(filepath)
-	idx = argmin(abs(mean(results['fps'], 1) - fps))
+	idx = argmax(abs(mean(results['fps'], 1)))
 	return results['correlations'][idx]
 
 
 
-def get_info(filepath, fps=25.):
+def get_info(filepath):
 	"""
 	Extracts average information rate at given sampling rate from experiment.
 	"""
@@ -111,7 +103,7 @@ def get_info(filepath, fps=25.):
 
 	results = Experiment(filepath)
 
-	idx = argmin(abs(mean(results['fps'], 1) - fps))
+	idx = argmax(abs(mean(results['fps'], 1)))
 
 	info = asarray(results['entropy']) + asarray(results['loglik'])
 	sem = std(info, 1, ddof=1)[idx] / sqrt(info.shape[1])
@@ -121,13 +113,13 @@ def get_info(filepath, fps=25.):
 
 
 
-def get_info_all(filepath, fps=25.):
+def get_info_all(filepath):
 	"""
 	Extracts all information rates at given sampling rate from experiment.
 	"""
 
 	results = Experiment(filepath)
-	idx = argmin(abs(mean(results['fps'], 1) - fps))
+	idx = argmax(abs(mean(results['fps'], 1)))
 	return asarray(results['entropy'][idx]) + asarray(results['loglik'][idx])
 
 
@@ -241,7 +233,7 @@ def main(argv):
 		width=2.5 * len(datasets),
 		height=5)
 	box('off')
-	ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
+	ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
 	legend(*method_labels, location='outer north east')
 
 	savefig(filepath)

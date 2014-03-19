@@ -15,8 +15,13 @@ from comparison import *
 
 filepath = 'figures/performance_curves.pdf'
 
-datasets = ['EUL', 'AOD']
-methods = ['STM', 'FOO', 'SOO', 'YAK', 'RAW']
+#datasets = ['EUL', 'AOD']
+#methods = ['STM', 'STX', 'FOO', 'SOO', 'YAK', 'RAW']
+#method_labels = ['STM', 'STM$^*$', 'FAST-OOPSI', 'SMC-OOPSI', 'DECONV', 'RAW']
+
+datasets = ['AOD']
+methods = ['STM', 'NNP', 'FOO', 'LNP']
+method_labels = ['STM', 'NNP', 'FAST-OOPSI', 'LNP']
 
 def get_corr(filepath):
 	"""
@@ -60,7 +65,7 @@ def get_info(filepath):
 
 
 def main(argv):
-	figure(sans_serif=True)
+	figure(sans_serif=True, margin=4.)
 
 	# compute Loftus & Masson's standard error
 	sem_adjusted = []
@@ -89,7 +94,6 @@ def main(argv):
 			plot(
 				hstack([fps, fps[::-1]]),
 				hstack([corr + 2. * sem_adjusted[k], corr[::-1] - 2. * sem_adjusted[k][::-1]]),
-				'--',
 				fill=eval('color_{0}'.format(method)),
 				opacity=.1,
 				pgf_options=['forget plot', 'draw=none'])
@@ -132,20 +136,19 @@ def main(argv):
 			plot(
 				hstack([fps, fps[::-1]]),
 				hstack([info + 2. * sem_adjusted[k], info[::-1] - 2. * sem_adjusted[k][::-1]]),
-				'--',
 				fill=eval('color_{0}'.format(method)),
 				opacity=.1,
 				pgf_options=['forget plot', 'draw=none'])
-			plot(fps, info,
+			plot(fps, info, '-',
 				color=eval('color_{0}'.format(method)),
 				line_width=2.)
 		xlabel('Sampling rate [Hz]')
 		ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
 		box('off')
-		axis(width=5, height=5, xmin=0., ymin=0., ymax=4.)
+		axis(width=5, height=5, xmin=0., ymin=0., ymax=6.)
 		title(r'\textbf{' + dataset + '}')
 
-	legend(*methods, location='outer north east')
+	legend(*method_labels, location='outer north east')
 
 	savefig(filepath)
 

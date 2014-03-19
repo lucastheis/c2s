@@ -76,17 +76,22 @@ def preprocess(data, fps=100., verbosity=0):
 
 			data[k]['spike_times'] = sort(spike_times).reshape(1, -1)
 
-		# number of samples after update of sampling rate
-		num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
+		if fps is not None and fps > 0.:
+			# number of samples after update of sampling rate
+			num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
 
-		if num_samples != data[k]['calcium'].size:
-			# factor by which number of samples will be changed
-			factor = num_samples / float(data[k]['calcium'].size)
+			if num_samples != data[k]['calcium'].size:
+				# factor by which number of samples will be changed
+				factor = num_samples / float(data[k]['calcium'].size)
 
-			# resample calcium signal
-			data[k]['calcium'] = resample(data[k]['calcium'].ravel(), num_samples).reshape(1, -1)
-			data[k]['fps'] = data[k]['fps'] * factor
+				# resample calcium signal
+				data[k]['calcium'] = resample(data[k]['calcium'].ravel(), num_samples).reshape(1, -1)
+				data[k]['fps'] = data[k]['fps'] * factor
+		else:
+			# don't change sampling rate
+			num_samples = data[k]['calcium'].size
 
+		# compute binned spike trains if missing
 		if 'spike_times' in data[k] and ('spikes' not in data[k] or num_samples != data[k]['spikes'].size):
 			# spike times in bins
 			spike_times = asarray(data[k]['spike_times'] * (data[k]['fps'] / 1000.), dtype=int).ravel()
@@ -408,7 +413,7 @@ def evaluate(data, method='corr', **kwargs):
 			entropy.append(-mean(poisson.logpmf(spikes[k], firing_rate / data[k]['fps'])) * data[k]['fps'] * factor)
 
 		if method.lower().startswith('l'):
-			if return_all:
+			if kwargs['return_all']:
 				return array(loglik), array(entropy), f
 			else:
 				# return log-likelihood
@@ -616,3 +621,64 @@ def responses(data, results, verbosity=0):
 		del entry['inputs']
 
 	return data
+
+
+
+def generate_inputs_and_outputs(data, var_explained=95., window_length=1000., pca=None, verbosity=1):
+	"""
+	Extracts input and output windows from calcium and spike traces.
+
+	@type  data: list
+	@param data: list of dictionaries containig calcium/fluorescence traces
+	
+	@type  var_explained: float
+	@param var_explained: controls the number of principal components used to represent calcium window
+
+	@type  window_length: int
+	@param window_length: size of calcium window used as input to STM (in milliseconds)
+
+	@type  pca: PCATransform
+	@param pca: if given, use results of previous PCA
+
+	@rtype: tuple
+	@return: inputs, outputs and a dictionary containing window masks and PCA results
+	"""
+
+    # turn milliseconds into bins
+	window_length = int(ceil(window_length / 1000. * data[0]['fps']) + .5) # bins
+
+	input_mask = zeros([2, window_length], dtype='bool')
+	input_mask[0] = True
+
+	output_mask = zeros([2, window_length], dtype='bool')
+	output_mask[1, window_length / 2] = True
+
+	if verbosity > 0:
+		print 'Extracting inputs and outputs...'
+
+	for entry in data:
+		# extract windows from fluorescence trace and corresponding spike counts
+		entry['inputs'], entry['outputs'] = generate_data_from_image(
+			vstack([entry['calcium'], entry['spikes']]), input_mask, output_mask)
+
+	if pca is None:
+		inputs = hstack(entry['inputs'] for entry in data)
+
+		if verbosity > 0:
+			print 'Performing PCA...'
+
+		pca = PCATransform(inputs, var_explained=var_explained)
+
+	if verbosity > 0:
+		print 'Reducing dimensionality of data...'
+
+	for entry in data:
+		entry['inputs'] = pca(entry['inputs'])
+
+	inputs = hstack(entry['inputs'] for entry in data)
+	outputs = hstack(entry['outputs'] for entry in data)
+
+	return inputs, outputs, {
+		'input_mask': input_mask, 
+		'output_mask': output_mask,
+		'pca': pca}

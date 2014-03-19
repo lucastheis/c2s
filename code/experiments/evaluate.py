@@ -58,8 +58,15 @@ def main(argv):
 			# results are stored in pickled experiment
 			results = Experiment(args.results)
 
-			with open(results['args'].dataset) as handle:
-				data = load(handle)
+			try:
+				if args.dataset:
+					with open(args.dataset) as handle:
+						data = load(handle)
+				else:
+					with open(results['args'].dataset) as handle:
+						data = load(handle)
+			except IOError:
+				print 'Could not open dataset.'
 
 		for k, entry in enumerate(data):
 			entry['predictions'] = results['predictions'][k]
