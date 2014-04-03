@@ -4,11 +4,12 @@ Tools for the prediction of spike trains from calcium traces.
 
 from copy import copy, deepcopy
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
-from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, max, square, sum, diff
-from numpy import corrcoef, array
+from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
+from numpy import corrcoef, array, eye, dot
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
+from scipy.stats.mstats import gmean
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from cmt.models import MCGSM, STM, Poisson
@@ -115,7 +116,8 @@ def train(data,
 		keep_all=True,
 		verbosity=1,
 		model_parameters={},
-		training_parameters={}):
+		training_parameters={},
+		regularize=0.):
 	"""
 	Trains STMs on the task of predicting spike trains from calcium traces.
 
@@ -141,7 +143,7 @@ def train(data,
 	@return: dictionary containing trained models and things needed for preprocessing
 	"""
 
-	model_parameters.setdefault('num_components', 2)
+	model_parameters.setdefault('num_components', 3)
 	model_parameters.setdefault('num_features', 2)
 	model_parameters.setdefault('nonlinearity', ExponentialFunction)
 	model_parameters.setdefault('distribution', Poisson)
@@ -188,25 +190,34 @@ def train(data,
 			print 'Training STM...'
 
 		model = STM(
-			dim_in_nonlinear=pca.pre_in.shape[0],
+			dim_in_nonlinear=pca.dim_in_pre,
 			dim_in_linear=0,
 			**model_parameters)
 
 		if num_valid > 0:
 			idx = random_select(num_valid, len(data))
 
-			inputs_train = hstack(entry['inputs'] for k, entry in enumerate(data) if k in idx)
-			inputs_valid = hstack(entry['inputs'] for k, entry in enumerate(data) if k not in idx)
+			inputs_train  = hstack(entry['inputs']  for k, entry in enumerate(data) if k in idx)
+			inputs_valid  = hstack(entry['inputs']  for k, entry in enumerate(data) if k not in idx)
 			outputs_train = hstack(entry['outputs'] for k, entry in enumerate(data) if k in idx)
 			outputs_valid = hstack(entry['outputs'] for k, entry in enumerate(data) if k not in idx)
 
 			inputs_outputs = (inputs_train, outputs_train, inputs_valid, outputs_valid)
 		else:
-			inputs = hstack(entry['inputs'] for entry in data)
+			inputs  = hstack(entry['inputs'] for entry in data)
 			outputs = hstack(entry['outputs'] for entry in data)
 
 			inputs_outputs = (inputs, outputs)
 
+		if regularize > 0.:
+			transform = eye(pca.dim_in) \
+				- eye(pca.dim_in, pca.dim_in,  1) / 2. \
+				- eye(pca.dim_in, pca.dim_in, -1) / 2.
+			transform = dot(transform, pca.pre_in.T)
+
+			training_parameters['regularize_predictors'] = {'strength': regularize, 'transform': transform, 'norm': 'L1'}
+			training_parameters['regularize_features']   = {'strength': regularize, 'transform': transform, 'norm': 'L1'}
+			
 		# train model
 		model.train(*inputs_outputs, parameters=training_parameters)
 
@@ -256,7 +267,7 @@ def train(data,
 
 
 
-def predict(data, results, verbosity=1):
+def predict(data, results, max_spikes_per_sec=1000., verbosity=1):
 	"""
 	Predicts firing rates from calcium traces using spiking neuron models.
 
@@ -265,6 +276,9 @@ def predict(data, results, verbosity=1):
 
 	@type  results: dict
 	@param results: dictionary containing results of training procedure
+
+	@type  max_spikes_per_sec: float
+	@param max_spikes_per_sec: prevents unreasonable spike count predictions
 
 	@type  verbosity: int
 	@param verbosity: if positive, print messages indicating progress
@@ -291,17 +305,21 @@ def predict(data, results, verbosity=1):
 		if verbosity > 0:
 			print 'Predicting cell {0}...'.format(k)
 
+		max_spikes = max_spikes_per_sec / float(entry['fps'])
+
 		predictions = []
 		for model in results['models']:
 			# compute conditional expectation
-			predictions.append(model.predict(entry['inputs']).ravel())
-		
+			pred = model.predict(entry['inputs']).ravel()
+			pred[pred > max_spikes] = max_spikes
+			predictions.append(pred)
+
 		# average predicted firing rate
-		avg = mean(predictions)
+		avg = mean(asarray(gmean(predictions, 0)))
 
 		entry['predictions'] = hstack([
 			zeros(pad_left) + avg,
-			mean(predictions, 0),
+			asarray(gmean(predictions, 0)),
 			zeros(pad_right) + avg]).reshape(1, -1)
 
 		# inputs no longer needed
@@ -343,7 +361,7 @@ def evaluate(data, method='corr', **kwargs):
 
 	kwargs.setdefault('downsampling', 1)
 	kwargs.setdefault('num_support', 10)
-	kwargs.setdefault('regularize', 5e-3)
+	kwargs.setdefault('regularize', 5e-8)
 	kwargs.setdefault('optimize', True)
 	kwargs.setdefault('return_all', False)
 	kwargs.setdefault('verbosity', 2)
@@ -424,7 +442,7 @@ def evaluate(data, method='corr', **kwargs):
 
 
 
-def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-3, verbosity=1):
+def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, verbosity=1):
 	"""
 	Fits a monotonic piecewise linear function to maximize the Poisson likelihood of
 	firing rate predictions interpreted as Poisson rate parameter.
@@ -445,13 +463,19 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-3, v
 	@return: a piecewise monotonic function
 	"""
 
+	if num_support < 2:
+		raise ValueError('`num_support` should be at least 2.')
+
 	# support points of piece-wise linear function
-	M = max(predictions) + 1
-	x = linspace(0, M, num_support)
+	if num_support > 2:
+		F = predictions
+		F = F[F > (max(F) - min(F)) / 100.]
+		x = list(percentile(F, range(0, 101, num_support)[1:-1]))
+		x = asarray([0] + x + [max(F)])
+	else:
+		x = asarray([min(predictions), max(predictions)])
 
 	def objf(y):
-		global y_
-
 		# construct piece-wise linear function
 		f = interp1d(x, y)
 
@@ -459,7 +483,11 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-3, v
 		l = f(predictions) + 1e-16
 
 		# compute negative log-likelihood (ignoring constants)
-		K = mean(l - spikes * log(l)) + regularize * sum(square(diff(diff(y))))
+		K = mean(l - spikes * log(l))
+		
+		# regularize curvature
+		z = (x[2:] - x[:-2]) / 2.
+		K = K + regularize * sum(square(diff(diff(y) / diff(x)) / z))
 
 		return K
 
