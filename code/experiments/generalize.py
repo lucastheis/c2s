@@ -22,7 +22,7 @@ def main(argv):
 
 	parser = ArgumentParser(argv[0], description=__doc__)
 
-	parser.add_argument('--dataset_train',  '-r', type=str,   required=True)
+	parser.add_argument('--dataset_train',  '-z', type=str,   required=True, nargs='+')
 	parser.add_argument('--dataset_test',   '-s', type=str,   required=True)
 	parser.add_argument('--num_components', '-c', type=int,   default=3)
 	parser.add_argument('--num_features',   '-f', type=int,   default=2)
@@ -33,14 +33,17 @@ def main(argv):
 	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
 	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
+	parser.add_argument('--regularize',     '-r', type=float, default=0.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
 	args, _ = parser.parse_known_args(argv[1:])
 
 	# load training data
-	with open(args.dataset_train) as handle:
-		data = load(handle)
+	data = []
+	for dataset in args.dataset_train:
+		with open(dataset) as handle:
+			data = data + load(handle)
 
 	if args.preprocess:
 		data = preprocess(data)
@@ -66,7 +69,8 @@ def main(argv):
 				'num_components': args.num_components,
 				'num_features': args.num_features},
 		training_parameters={
-			'verbosity': 1},
+			'verbosity': 0},
+		regularize=args.regularize,
 		verbosity=1)
 
 

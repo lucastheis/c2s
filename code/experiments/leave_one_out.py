@@ -32,6 +32,7 @@ def main(argv):
 	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
 	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
+	parser.add_argument('--regularize',     '-r', type=float, default=0.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
@@ -63,6 +64,7 @@ def main(argv):
 					'num_features': args.num_features},
 			training_parameters={
 				'verbosity': 0},
+			regularize=args.regularize,
 			verbosity=1)
 
 		# predict responses of cell i

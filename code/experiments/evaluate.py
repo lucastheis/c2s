@@ -104,7 +104,8 @@ def main(argv):
 				optimize=args.optimize,
 				downsampling=ds,
 				verbosity=args.verbosity,
-				return_all=True)
+				return_all=True,
+				regularize=5e-8)
 
 			loglik.append(L)
 			entropy.append(H)

@@ -22,7 +22,7 @@ def main(argv):
 	parser.add_argument('--verbosity', '-v', type=int, default=1)
 
 	args = parser.parse_args(argv[1:])
-	
+
 	with open(args.input) as handle:
 		data = load(handle)
 

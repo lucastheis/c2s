@@ -19,9 +19,18 @@ filepath = 'figures/performance_curves.pdf'
 #methods = ['STM', 'STX', 'FOO', 'SOO', 'YAK', 'RAW']
 #method_labels = ['STM', 'STM$^*$', 'FAST-OOPSI', 'SMC-OOPSI', 'DECONV', 'RAW']
 
+#datasets = ['AOD', 'EUL']
+#methods = ['STM', 'NNP', 'FOO', 'LNP']
+#method_labels = ['STM', 'NNP', 'FAST-OOPSI', 'LNP']
+
+datasets = ['EUL', 'AOD']
+dataset_labels = ['Retina/OGB1', 'V1/OGB1']
+methods = ['STM', 'FOO', 'YAK', 'RAW']
+method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
+
 datasets = ['AOD']
-methods = ['STM', 'NNP', 'FOO', 'LNP']
-method_labels = ['STM', 'NNP', 'FAST-OOPSI', 'LNP']
+methods = ['STX', 'FOX']
+method_labels = ['STM', 'Vogelstein et al. (2010)']
 
 def get_corr(filepath):
 	"""
@@ -106,7 +115,7 @@ def main(argv):
 		ylabel(r'Correlation $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
 		box('off')
 		axis(width=5, height=5, xmin=0., ymin=0., ymax=1.)
-		title(r'\textbf{' + dataset + '}')
+		title(r'\textbf{' + dataset_labels[k] + '}')
 
 	# compute Loftus & Masson's standard error
 	sem_adjusted = []
@@ -146,7 +155,7 @@ def main(argv):
 		ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
 		box('off')
 		axis(width=5, height=5, xmin=0., ymin=0., ymax=6.)
-		title(r'\textbf{' + dataset + '}')
+		title(r'\textbf{' + dataset_labels[k] + '}')
 
 	legend(*method_labels, location='outer north east')
 

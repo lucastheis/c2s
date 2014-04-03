@@ -16,56 +16,67 @@ filepath = 'figures/comparison.pdf'
 
 # colors corresponding to the different methods
 cmap = 'jet'
-color_STM = RGB(0, 0, 0)
-color_ST2 = RGB(*colormaps[cmap].colors[0])
-color_STX = RGB(*colormaps[cmap].colors[0])
-color_NNP = RGB(*colormaps[cmap].colors[220])
-color_LNP = RGB(*colormaps[cmap].colors[180])
+color_STM = RGB(0.0, 0.0, 0.0)
+color_STX = RGB(0.0, 0.0, 0.0)
+color_NNP = RGB(0.5, 0.5, 0.5)
+color_LNP = RGB(0.8, 0.8, 0.8)
 color_FOO = RGB(*colormaps[cmap].colors[80])
+color_FOX = RGB(*colormaps[cmap].colors[80])
 color_FO2 = RGB(*colormaps[cmap].colors[90])
 color_SOO = RGB(*colormaps[cmap].colors[120])
 color_RAW = RGB(*colormaps[cmap].colors[180])
 color_YAK = RGB(*colormaps[cmap].colors[220])
 
 # locations of precomputed correlations
-corr_AOD_STM = 'results/correlations.3.stm.xpck'
-corr_AOD_STX = 'results/correlations.3.stmx.xpck'
-corr_AOD_NNP = 'results/correlations.3.nnp5.xpck'
+corr_AOD_STM = 'results/correlations.3.stm_ga.xpck'
+corr_AOD_STX = 'results/correlations.3.stmx_1.xpck'
+corr_AOD_NNP = 'results/correlations.3.nnp_10_5.xpck'
 corr_AOD_LNP = 'results/correlations.3.lnp.xpck'
-corr_AOD_FOO = 'results/correlations.3.fast_oopsi.xpck'
+corr_AOD_FOO = 'results/correlations.3.fast_oopsi_cv.xpck'
+corr_AOD_FOX = 'results/correlations.3.fast_oopsi.xpck'
 corr_AOD_SOO = 'results/correlations.3.smc_oopsi.xpck'
 corr_AOD_YAK = 'results/correlations.3.yaksi.xpck'
 corr_AOD_RAW = 'results/correlations.3.raw.xpck'
 
 corr_EUL_STM = 'results/correlations.4.stm.xpck'
-corr_EUL_STX = 'results/correlations.4.stmx.xpck'
-corr_EUL_FOO = 'results/correlations.4.fast_oopsi.xpck'
+corr_EUL_STX = 'results/correlations.4.stmx_1.xpck'
+corr_EUL_NNP = 'results/correlations.4.nnp_5_3.xpck'
+corr_EUL_LNP = 'results/correlations.4.lnp.xpck'
+corr_EUL_FOO = 'results/correlations.4.fast_oopsi_cv.xpck'
+corr_EUL_FOX = 'results/correlations.4.fast_oopsi.xpck'
 corr_EUL_SOO = 'results/correlations.4.smc_oopsi.xpck'
 corr_EUL_YAK = 'results/correlations.4.yaksi.xpck'
 corr_EUL_RAW = 'results/correlations.4.raw.xpck'
 
 # locations of precomputed likelihoods
-lik_AOD_STM = 'results/likelihoods.3.stm.xpck'
-lik_AOD_STX = 'results/likelihoods.3.stmx.xpck'
-lik_AOD_NNP = 'results/likelihoods.3.nnp5.xpck'
+lik_AOD_STM = 'results/likelihoods.3.stm_ga.xpck'
+lik_AOD_STX = 'results/likelihoods.3.stmx_1.xpck'
+lik_AOD_NNP = 'results/likelihoods.3.nnp_10_5.xpck'
 lik_AOD_LNP = 'results/likelihoods.3.lnp.xpck'
-lik_AOD_FOO = 'results/likelihoods.3.fast_oopsi.xpck'
+lik_AOD_FOO = 'results/likelihoods.3.fast_oopsi_cv.xpck'
+lik_AOD_FOX = 'results/likelihoods.3.fast_oopsi.xpck'
 lik_AOD_SOO = 'results/likelihoods.3.smc_oopsi.xpck'
 lik_AOD_YAK = 'results/likelihoods.3.yaksi.xpck'
 lik_AOD_RAW = 'results/likelihoods.3.raw.xpck'
 
 lik_EUL_STM = 'results/likelihoods.4.stm.xpck'
-lik_EUL_STX = 'results/likelihoods.4.stmx.xpck'
-lik_EUL_FOO = 'results/likelihoods.4.fast_oopsi.xpck'
+lik_EUL_STX = 'results/likelihoods.4.stmx_1.xpck'
+lik_EUL_NNP = 'results/likelihoods.4.nnp_5_3.xpck'
+lik_EUL_LNP = 'results/likelihoods.4.lnp.xpck'
+lik_EUL_FOO = 'results/likelihoods.4.fast_oopsi_cv.xpck'
+lik_EUL_FOX = 'results/likelihoods.4.fast_oopsi.xpck'
 lik_EUL_SOO = 'results/likelihoods.4.smc_oopsi.xpck'
 lik_EUL_YAK = 'results/likelihoods.4.yaksi.xpck'
 lik_EUL_RAW = 'results/likelihoods.4.raw.xpck'
 
 datasets = ['AOD', 'EUL']
-methods = ['STM', 'STX', 'FOO', 'SOO', 'YAK', 'RAW']
-method_labels = ['STM', 'STM$^*$', 'FAST-OOPSI', 'SMC-OOPSI', 'DECONV', 'RAW']
-
-
+dataset_labels = ['V1/OGB1', 'Retina/OGB1']
+#methods = ['STM', 'NNP', 'LNP']
+#method_labels = ['STM', 'MLP', 'LNP']
+methods = ['STM', 'FOO', 'YAK', 'RAW']
+method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
+#methods = ['STX', 'FOX', 'RAW']
+#method_labels = ['STM$^*$', 'Vogelstein et al. (2010)', 'Raw']
 
 def get_corr(filepath, fps=25.):
 	"""
@@ -198,7 +209,7 @@ def main(argv):
 
 		bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
 
-	xtick(xval, datasets)
+	xtick(xval, dataset_labels)
 	axis(
 		xmin=0.5,
 		xmax=len(datasets) + .5,
@@ -233,7 +244,7 @@ def main(argv):
 
 		bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
 
-	xtick(xval, datasets)
+	xtick(xval, dataset_labels)
 	axis(
 		xmin=0.5,
 		xmax=len(datasets) + .5,
