@@ -28,9 +28,9 @@ dataset_labels = ['Retina/OGB1', 'V1/OGB1']
 methods = ['STM', 'FOO', 'YAK', 'RAW']
 method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
-datasets = ['AOD']
-methods = ['STX', 'FOX']
-method_labels = ['STM', 'Vogelstein et al. (2010)']
+#datasets = ['AOD']
+#methods = ['STX', 'FOX']
+#method_labels = ['STM', 'Vogelstein et al. (2010)']
 
 def get_corr(filepath):
 	"""
@@ -73,8 +73,31 @@ def get_info(filepath):
 
 
 
+def get_auc(filepath):
+	"""
+	Extracts average area under curve from experiment.
+	"""
+
+	if not os.path.exists(filepath):
+		print filepath, 'does not exist.'
+		return 0., 0.
+
+	results = Experiment(filepath)
+
+	N = asarray(results['auc']).shape[1]
+
+	fps = mean(results['fps'], 1)
+	auc = mean(results['auc'], 1)
+	sem = std(results['auc'], 1, ddof=1) / sqrt(N)
+
+	return fps, auc, sem
+
+
+
 def main(argv):
 	figure(sans_serif=True, margin=4.)
+
+	# CORRELATION
 
 	# compute Loftus & Masson's standard error
 	sem_adjusted = []
@@ -117,6 +140,9 @@ def main(argv):
 		axis(width=5, height=5, xmin=0., ymin=0., ymax=1.)
 		title(r'\textbf{' + dataset_labels[k] + '}')
 
+
+	# INFORMATION GAIN
+
 	# compute Loftus & Masson's standard error
 	sem_adjusted = []
 
@@ -154,7 +180,51 @@ def main(argv):
 		xlabel('Sampling rate [Hz]')
 		ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
 		box('off')
-		axis(width=5, height=5, xmin=0., ymin=0., ymax=6.)
+		axis(width=5, height=5, xmin=0., ymin=0., ymax=5.)
+		title(r'\textbf{' + dataset_labels[k] + '}')
+
+
+	# AREA UNDER CURVE
+
+	# compute Loftus & Masson's standard error
+	sem_adjusted = []
+
+	for dataset in datasets:
+		sem_adjusted.append([])
+
+		auc = []
+		for method in methods:
+			auc.append(Experiment(eval('auc_{0}_{1}'.format(dataset, method)))['auc'])
+		auc = array(auc)
+
+		for n in range(auc.shape[1]):
+			# compute Loftus & Masson standard error for n-th sampling rate
+			sem_adjusted[-1].append(sem_lm(auc[:, n, :]))
+
+	sem_adjusted = array(sem_adjusted)
+
+	# plot aucelations
+	for k, dataset in enumerate(datasets):
+		subplot(k, 2, spacing=3)
+
+		for method in methods:
+			fps, auc, sem = get_auc(eval('auc_{0}_{1}'.format(dataset, method)))
+
+			plot(
+				hstack([fps, fps[::-1]]),
+				hstack([auc + 2. * sem_adjusted[k], auc[::-1] - 2. * sem_adjusted[k][::-1]]),
+				fill=eval('color_{0}'.format(method)),
+				opacity=.1,
+				pgf_options=['forget plot', 'draw=none'])
+			plot(fps, auc, '-',
+				color=eval('color_{0}'.format(method)),
+				line_width=2.)
+
+
+		xlabel('Sampling rate [Hz]')
+		ylabel(r'Arrea under curve $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
+		box('off')
+		axis(width=5, height=5, xmin=0., ymin=.5, ymax=.95)
 		title(r'\textbf{' + dataset_labels[k] + '}')
 
 	legend(*method_labels, location='outer north east')

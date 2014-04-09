@@ -32,6 +32,7 @@ def main(argv):
 	parser.add_argument('--num_valid',      '-v', type=int,   default=randint(0, 5))
 	parser.add_argument('--var_explained',  '-e', type=float, default=rand() * 20. + 80)
 	parser.add_argument('--window_length',  '-w', type=float, default=rand() * 1900. + 200.)
+	parser.add_argument('--regularize',     '-r', type=float, default=0.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
@@ -62,6 +63,7 @@ def main(argv):
 				'num_features': args.num_features},
 		training_parameters={
 			'verbosity': 1},
+		regularize=args.regularize,
 		verbosity=1)
 
 

@@ -74,6 +74,7 @@ def main(argv):
 	fps = []
 	loglik = []
 	correlations = []
+	auc = []
 	entropy = []
 	functions = []
 
@@ -83,7 +84,7 @@ def main(argv):
 		for entry in data:
 			fps[-1].append(entry['fps'] / ds)
 
-		if args.method.startswith('c') or args.method.startswith('a'):
+		if args.method.startswith('c'):
 			# compute correlations
 			R = evaluate(data, method=args.method,
 				optimize=args.optimize,
@@ -97,6 +98,23 @@ def main(argv):
 
 			print '------'
 			print '{0:.3f}'.format(mean(R))
+			print
+
+		elif args.method.startswith('a'):
+			# compute correlations
+			A = evaluate(data, method=args.method,
+				optimize=args.optimize,
+				downsampling=ds,
+				verbosity=args.verbosity)
+
+			auc.append(A)
+
+			for a in A:
+				print '{0:.3f}'.format(a)
+
+			print '------'
+			print '{0:.3f}'.format(mean(A))
+			print
 
 		else:
 			# compute log-likelihoods
@@ -131,6 +149,8 @@ def main(argv):
 
 	if args.method.startswith('c'):
 		experiment['correlations'] = correlations
+	elif args.method.startswith('a'):
+		experiment['auc'] = auc
 	else:
 		experiment['loglik'] = loglik
 		experiment['entropy'] = entropy

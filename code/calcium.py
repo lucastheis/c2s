@@ -19,7 +19,7 @@ from cmt.transforms import PCATransform
 from cmt.utils import random_select
 
 try:
-	from roc import real_ROC
+	from roc import roc
 except:
 	pass
 
@@ -139,6 +139,9 @@ def train(data,
 	@type  keep_all: bool
 	@param keep_all: if False, only keep the best of all trained models
 
+	@type  regularize: float
+	@param regularize: strength with which model filters are regularized
+
 	@rtype: dict
 	@return: dictionary containing trained models and things needed for preprocessing
 	"""
@@ -215,8 +218,14 @@ def train(data,
 				- eye(pca.dim_in, pca.dim_in, -1) / 2.
 			transform = dot(transform, pca.pre_in.T)
 
-			training_parameters['regularize_predictors'] = {'strength': regularize, 'transform': transform, 'norm': 'L1'}
-			training_parameters['regularize_features']   = {'strength': regularize, 'transform': transform, 'norm': 'L1'}
+			training_parameters['regularize_predictors'] = {
+				'strength': regularize,
+				'transform': transform,
+				'norm': 'L1'}
+			training_parameters['regularize_features'] = {
+				'strength': regularize / 10.,
+				'transform': transform,
+				'norm': 'L1'}
 			
 		# train model
 		model.train(*inputs_outputs, parameters=training_parameters)
@@ -392,10 +401,26 @@ def evaluate(data, method='corr', **kwargs):
 
 			# compute area under ROC curve
 			for entry in data:
-				auc.append(
-					real_ROC(
-						downsample(entry['predictions'], kwargs['downsampling']),
-						downsample(entry['spikes'], kwargs['downsampling']) > .5)[0])
+				# downsample firing rates
+				predictions = downsample(entry['predictions'], kwargs['downsampling']).ravel()
+				spikes = array(downsample(entry['spikes'], kwargs['downsampling']).ravel() + .5, dtype=int)
+
+				# marks bins containing spikes
+				mask = spikes > .5
+
+				# collect positive and negative examples
+				neg = predictions[-mask]
+				pos = []
+
+				# this is necessary because any bin can contain more than one spike
+				while any(mask):
+					pos.append(predictions[mask])
+					spikes -= 1
+					mask = spikes > .5
+				pos = hstack(pos)
+
+				# compute area under curve
+				auc.append(roc(pos, neg)[0])
 
 			return array(auc)
 
