@@ -50,7 +50,7 @@ def main(argv):
 				try:
 					with open(args.dataset) as handle:
 						data = load(handle)
-				except IOError:
+				except IOError as err:
 					print 'Could not open dataset.'
 			else:
 				print 'Please specify which dataset corresponds to these predictions.'
@@ -65,7 +65,7 @@ def main(argv):
 				else:
 					with open(results['args'].dataset) as handle:
 						data = load(handle)
-			except IOError:
+			except IOError as err:
 				print 'Could not open dataset.'
 
 		for k, entry in enumerate(data):
@@ -164,4 +164,3 @@ def main(argv):
 
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
-

@@ -10,10 +10,10 @@ from glob import glob
 from pgf import *
 from tools import Experiment
 
-colors = [RGB(0, 0, 0), RGB(0.4, 0.4, 0.4)]
-line_styles = ['-', '---']
-results = ['results/training_set_size.3', 'results/training_set_size.4']
-labels = ['V1/OGB1', 'Retina/OGB1']
+colors = [RGB(0, 0, 0), RGB(0.4, 0.4, 0.4), RGB(0.6, 0.6, 0.6)]
+line_styles = ['-', '---', '--']
+results = ['results/training_set_size.3', 'results/training_set_size.6', 'results/training_set_size.4']
+labels = ['V1/OGB1/AOD', 'V1/OGB1/Glv', 'Retina/OGB1/Glv']
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
@@ -24,10 +24,12 @@ def main(argv):
 	figure(sans_serif=True, margin=3)
 
 	for k, resultspath in enumerate(results):
-		print 'Collecting correlation results...'
-
 		corr = defaultdict(lambda: [])
+		auc = defaultdict(lambda: [])
 		info = defaultdict(lambda: [])
+		info_relative = defaultdict(lambda: [])
+
+		print 'Collecting correlation results...'
 
 		for filepath in glob(os.path.join(resultspath, '*correlations.xpck')):
 			res_corr = Experiment(filepath)
@@ -53,6 +55,7 @@ def main(argv):
 			idx = argmin(abs(mean(res_info['fps'], 1) - args.fps))
 
 			information = asarray(res_info['entropy'][idx]) + asarray(res_info['loglik'][idx])
+			information_relative = information / asarray(res_info['entropy'][idx])
 
 			if any(information < -100):
 				print filepath
@@ -61,6 +64,23 @@ def main(argv):
 			mask[res_pred['training_cells']] = False
 
 			info[res_pred['args'].num_train].extend(information[mask])
+			info_relative[res_pred['args'].num_train].extend(information_relative[mask])
+
+		print 'Collecting area under curve results...'
+
+		for filepath in glob(os.path.join(resultspath, '*auc.xpck')):
+			res_auc = Experiment(filepath)
+			res_pred = Experiment(res_auc['args'].results)
+
+			aucs = asarray(res_auc['auc'])
+
+			# index of ROC scores at given sampling rate
+			idx = argmin(abs(mean(res_auc['fps'], 1) - args.fps))
+
+			mask = ones(aucs.shape[1], dtype=bool)
+			mask[res_pred['training_cells']] = False
+
+			auc[res_pred['args'].num_train].extend(aucs[idx][mask])
 
 		num_cells = sort(corr.keys())
 
@@ -74,6 +94,11 @@ def main(argv):
 		info_05p = []
 		info_95p = []
 
+		auc_avg = []
+		auc_std = []
+		auc_05p = []
+		auc_95p = []
+
 		for n in num_cells:
 			corr_avg.append(mean(corr[n]))
 			corr_std.append(std(corr[n], ddof=1))
@@ -85,6 +110,11 @@ def main(argv):
 			info_05p.append(percentile(info[n], 5))
 			info_95p.append(percentile(info[n], 95))
 
+			auc_avg.append(mean(auc[n]))
+			auc_std.append(std(auc[n], ddof=1))
+			auc_05p.append(percentile(auc[n], 5))
+			auc_95p.append(percentile(auc[n], 95))
+
 		corr_avg = asarray(corr_avg)
 		corr_std = asarray(corr_std)
 		corr_05p = asarray(corr_05p)
@@ -95,15 +125,24 @@ def main(argv):
 		info_05p = asarray(info_05p)
 		info_95p = asarray(info_95p)
 
+		info_relative_avg = asarray(info_avg)
+
+		auc_avg = asarray(auc_avg)
+		auc_std = asarray(auc_std)
+		auc_05p = asarray(auc_05p)
+		auc_95p = asarray(auc_95p)
+
 		print 'Plotting...'
 
 		subplot(0, 0, spacing=3)
 
 		plot(num_cells, corr_avg, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=2)
+#		plot(num_cells, corr_05p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
+#		plot(num_cells, corr_95p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
 		xlabel('Number of training cells')
 		ylabel('Correlation')
 		ylim(0, .6)
-		xlim(0, 15)
+		xlim(0, 20)
 		ytick([0., 0.1, 0.2, 0.3, 0.4, 0.5])
 		xtick([0, 2, 4, 6, 8, 10, 12, 14])
 		axis(width=5, height=5, axis_on_top=False)
@@ -112,15 +151,47 @@ def main(argv):
 
 		subplot(0, 1)
 
+		plot(num_cells, auc_avg, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=2)
+#		plot(num_cells, auc_05p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
+#		plot(num_cells, auc_95p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
+		xlabel('Number of training cells')
+		ylabel('Area under curve')
+		ylim(.5, .95)
+		xlim(0, 20)
+		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		axis(width=5, height=5, axis_on_top=False)
+		box('off')
+		grid('on')
+
+		subplot(1, 0)
+
 		info_05p[info_05p < 0.] = 0.
 		info_95p[info_95p < 0.] = 0.
 		info_avg[info_avg < 0.] = 0.
 
 		plot(num_cells, info_avg, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=2)
+#		plot(num_cells, info_05p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
+#		plot(num_cells, info_95p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
 		xlabel('Number of training cells')
 		ylabel('Information gain [bit/s]')
 		ylim(0, 4.5)
-		xlim(0, 15)
+		xlim(0, 20)
+		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		axis(width=5, height=5, axis_on_top=False)
+		box('off')
+		grid('on')
+
+		subplot(1, 1)
+
+		info_05p[info_05p < 0.] = 0.
+		info_95p[info_95p < 0.] = 0.
+		info_avg[info_avg < 0.] = 0.
+
+		plot(num_cells, info_relative_avg, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=2)
+		xlabel('Number of training cells')
+		ylabel('Relative Information gain')
+		ylim(0, 4.5)
+		xlim(0, 20)
 		xtick([0, 2, 4, 6, 8, 10, 12, 14])
 		axis(width=5, height=5, axis_on_top=False)
 		box('off')

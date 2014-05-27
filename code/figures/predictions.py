@@ -1,5 +1,5 @@
 """
-Visualize calcium traces and predictions ordered by quality of predictions (correlations).
+Visualize calcium traces and predictions ordered by quality of predictions (performance).
 """
 
 import os
@@ -9,7 +9,7 @@ sys.path.append('./code')
 
 from argparse import ArgumentParser
 from numpy import linspace, asarray, hstack, zeros_like, logical_and, convolve, min, mean
-from numpy import argmin, argsort, ceil, arange
+from numpy import argmin, argsort, ceil, arange, max
 from scipy.signal import hamming
 from scipy.io import loadmat
 from pickle import load
@@ -18,12 +18,19 @@ from tools import Experiment
 from calcium import downsample
 from comparison import *
 
+# choose which datasets to visualize
 #datasets = ['AOD', 'EUL']
 #dataset_paths = ['data/data.3.preprocessed.pck', 'data/data.4.preprocessed.pck']
 #datasets = ['AOD']
 #dataset_paths = ['data/data.3.preprocessed.pck']
-datasets = ['EUL']
-dataset_paths = ['data/data.4.preprocessed.pck']
+#datasets = ['GC6']
+#dataset_paths = ['data/data.2.preprocessed.pck']
+#datasets = ['EUL']
+#dataset_paths = ['data/data.4.preprocessed.pck']
+datasets = ['GLV']
+dataset_paths = ['data/data.6.preprocessed.pck']
+
+# choose which methods to visualize
 methods = ['STM', 'STX', 'FOO', 'YAK']
 
 def df_over_f(signal, fps, tau=.5):
@@ -34,29 +41,46 @@ def df_over_f(signal, fps, tau=.5):
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('--seconds',     '-s', type=int, default=80)
+	parser.add_argument('--seconds',     '-s', type=int, default=60)
 	parser.add_argument('--offset',      '-o', type=int, default=50)
-	parser.add_argument('--downsample',  '-d', type=int, default=8)
-	parser.add_argument('--fps',         '-f', type=int, default=5)
+	parser.add_argument('--downsample',  '-d', type=int, default=4)
+	parser.add_argument('--fps',         '-f', type=int, default=25)
 	parser.add_argument('--max_traces',  '-m', type=int, default=1)
-	parser.add_argument('--width',       '-w', type=int, default=12)
+	parser.add_argument('--width',       '-w', type=int, default=6)
+	parser.add_argument('--normalize',   '-n', type=int, default=1)
+	parser.add_argument('--sort_by',     '-b', type=str, default='correlations')
 
 	args = parser.parse_args(argv[1:])
 
 	for l, dataset in enumerate(datasets):
 		pdfs = []
-		correlations = {}
+		performance = {}
 		predictions = {}
 
-		# load predictions and correlations with real spikes for all methods
+		# load predictions and performance measures
 		for method in methods:
 			if method == 'RAW':
 				continue
 
-			results = Experiment(eval('corr_{0}_{1}'.format(dataset, method)))
+			# load performance measures
+			if args.sort_by.lower().startswith('c'):
+				results = Experiment(eval('corr_{0}_{1}'.format(dataset, method)))
+				idx = argmin(abs(mean(results['fps'], 1) - args.fps))
+				performance[method] = results['correlations'][idx]
 
-			idx = argmin(abs(mean(results['fps'], 1) - args.fps))
-			correlations[method] = results['correlations'][idx]
+			elif args.sort_by.lower().startswith('a'):
+				results = Experiment(eval('auc_{0}_{1}'.format(dataset, method)))
+				idx = argmin(abs(mean(results['fps'], 1) - args.fps))
+				performance[method] = results['auc'][idx]
+
+			elif args.sort_by.lower().startswith('l'):
+				results = Experiment(eval('loglik_{0}_{1}'.format(dataset, method)))
+				idx = argmin(abs(mean(results['fps'], 1) - args.fps))
+				performance[method] = results['loglik'][idx]
+
+			else:
+				print 'Unknown criterion \'{0}\'.'.format(args.sort_by)
+				return 0
 
 			if not os.path.exists(results['args'].results):
 				print 'Could not find "{0}".'.format(results['args'].results)
@@ -74,8 +98,8 @@ def main(argv):
 		with open(dataset_paths[l]) as handle:
 			data = load(handle)
 
-		# sort predictions by correlation of first method
-		indices = argsort(correlations[methods[0]])
+		# sort predictions by performance of first method
+		indices = argsort(performance[methods[0]])
 
 		# split dataset in chunks and show in separate plots
 		for b in range(int(ceil(len(data) / float(args.max_traces)) + .5)):
@@ -83,11 +107,17 @@ def main(argv):
 
 			print 'Creating figure for dataset {0}, batch {1}...'.format(dataset, b)
 
+			# for each trial in this chunk
 			for j, i in enumerate(indices[b * args.max_traces:(b + 1) * args.max_traces]):
 				subplot(j, 0)
 
 				spikes = downsample(data[i]['spikes'].ravel(), args.downsample)
 				calcium = downsample(data[i]['calcium'].ravel(), args.downsample)
+
+				max_spikes = max(spikes) / 3.
+				num_spikes = sum(spikes)
+
+				spikes = spikes / max_spikes
 
 				fps = data[i]['fps'] / args.downsample
 				bins = fps * args.seconds
@@ -105,16 +135,16 @@ def main(argv):
 
 				for k, method in enumerate(methods):
 					pred = downsample(predictions[method][i].ravel(), args.downsample)
-					# plot estimated firing rate
-					if method == 'FOO':
-						# OOPSI underestimates firing rate, blow up a bit
-						plot(arange(bins) - .5, pred[offset:offset + bins] / args.downsample * 2.5 - 3.5 - k, '-',
-							color=eval('color_{0}'.format(method)),
-							line_width=.25, const_plot=True)
+					if args.normalize:
+						# normalize by integral
+						pred = pred / sum(pred) * num_spikes / max_spikes
 					else:
-						plot(arange(bins) - .5, pred[offset:offset + bins] / args.downsample * 1.5 - 3.5 - k, '-',
-							color=eval('color_{0}'.format(method)),
-							line_width=.25, const_plot=True)
+						# normalize by maximum
+						pred = pred / (max(pred[offset:offset + bins]) + .1) * 2.5
+
+					plot(arange(bins) - .5, pred[offset:offset + bins] / args.downsample * 1.5 - 3.5 - k, '-',
+						color=eval('color_{0}'.format(method)),
+						line_width=.25, const_plot=True)
 
 				# plot spikes
 				for st in spike_times:
@@ -131,10 +161,10 @@ def main(argv):
 				for m in methods:
 					color = eval('color_{0}'.format(m))
 					corr_str.append('{{\\color[rgb]{{{0:.2f}, {1:.2f}, {2:.2f}}} {3:.4f}}}'.format(
-						color.red / 255., color.green / 255., color.blue / 255., correlations[m][i]))
+						color.red / 255., color.green / 255., color.blue / 255., performance[m][i]))
 				corr_str = ' / '.join(corr_str)
 
-				title('\\small Correlation: {0} (at {1} fps)'.format(corr_str, args.fps))
+				title('\\small {2}: {0} (at {1} fps)'.format(corr_str, args.fps, args.sort_by))
 				box('off')
 				axis('off')
 

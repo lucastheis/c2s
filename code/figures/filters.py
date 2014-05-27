@@ -10,8 +10,13 @@ from numpy import dot, sqrt, max, min
 from pgf import *
 from tools import Experiment
 
-filepath_AOD = 'results/visualization.3/train.08042014.171520.xpck'
-filepath_EUL = 'results/visualization.4/train.08042014.172252.xpck'
+# regularized
+#filepath_AOD = 'results/visualization.3/train.08042014.171520.xpck'
+#filepath_EUL = 'results/visualization.4/train.08042014.172252.xpck'
+
+# no regularization
+filepath_AOD = 'results/visualization.3/train.24042014.154729.xpck'
+filepath_EUL = 'results/visualization.4/train.24042014.154153.xpck'
 
 datasets = ['AOD', 'EUL']
 dataset_labels = ['V1/OGB1', 'Retina/OGB1']

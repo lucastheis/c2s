@@ -29,7 +29,7 @@ color_YAK = RGB(*colormaps[cmap].colors[220])
 
 # locations of precomputed correlations
 corr_AOD_STM = 'results/correlations.3.stm_ga.xpck'
-corr_AOD_STX = 'results/correlations.3.stmx_1.xpck'
+corr_AOD_STX = 'results/correlations.3.stmx_4_6.xpck'
 corr_AOD_NNP = 'results/correlations.3.nnp_10_5.xpck'
 corr_AOD_LNP = 'results/correlations.3.lnp.xpck'
 corr_AOD_FOO = 'results/correlations.3.fast_oopsi_cv.xpck'
@@ -40,7 +40,7 @@ corr_AOD_YAK = 'results/correlations.3.yaksi.xpck'
 corr_AOD_RAW = 'results/correlations.3.raw.xpck'
 
 corr_EUL_STM = 'results/correlations.4.stm.xpck'
-corr_EUL_STX = 'results/correlations.4.stmx_1.xpck'
+corr_EUL_STX = 'results/correlations.4.stmx_3_6.xpck'
 corr_EUL_NNP = 'results/correlations.4.nnp_5_3.xpck'
 corr_EUL_LNP = 'results/correlations.4.lnp.xpck'
 corr_EUL_FOO = 'results/correlations.4.fast_oopsi_cv.xpck'
@@ -49,9 +49,18 @@ corr_EUL_SOO = 'results/correlations.4.smc_oopsi.xpck'
 corr_EUL_YAK = 'results/correlations.4.yaksi.xpck'
 corr_EUL_RAW = 'results/correlations.4.raw.xpck'
 
+corr_GLV_STM = 'results/correlations.6.stm.xpck'
+corr_GLV_STX = 'results/correlations.6.stmx_4_3.xpck'
+corr_GLV_NNP = 'results/correlations.6.nnp_10_5.xpck'
+corr_GLV_LNP = 'results/correlations.6.lnp.xpck'
+corr_GLV_FOO = 'results/correlations.6.fast_oopsi_cv.xpck'
+corr_GLV_FOX = 'results/correlations.6.fast_oopsi.xpck'
+corr_GLV_YAK = 'results/correlations.6.yaksi.xpck'
+corr_GLV_RAW = 'results/correlations.6.raw.xpck'
+
 # locations of precomputed likelihoods
 lik_AOD_STM = 'results/likelihoods.3.stm_ga.xpck'
-lik_AOD_STX = 'results/likelihoods.3.stmx_1.xpck'
+lik_AOD_STX = 'results/likelihoods.3.stmx_4_6.xpck'
 lik_AOD_NNP = 'results/likelihoods.3.nnp_10_5.xpck'
 lik_AOD_LNP = 'results/likelihoods.3.lnp.xpck'
 lik_AOD_FOO = 'results/likelihoods.3.fast_oopsi_cv.xpck'
@@ -62,7 +71,7 @@ lik_AOD_YAK = 'results/likelihoods.3.yaksi.xpck'
 lik_AOD_RAW = 'results/likelihoods.3.raw.xpck'
 
 lik_EUL_STM = 'results/likelihoods.4.stm.xpck'
-lik_EUL_STX = 'results/likelihoods.4.stmx_1.xpck'
+lik_EUL_STX = 'results/likelihoods.4.stmx_3_6.xpck'
 lik_EUL_NNP = 'results/likelihoods.4.nnp_5_3.xpck'
 lik_EUL_LNP = 'results/likelihoods.4.lnp.xpck'
 lik_EUL_FOO = 'results/likelihoods.4.fast_oopsi_cv.xpck'
@@ -71,9 +80,18 @@ lik_EUL_SOO = 'results/likelihoods.4.smc_oopsi.xpck'
 lik_EUL_YAK = 'results/likelihoods.4.yaksi.xpck'
 lik_EUL_RAW = 'results/likelihoods.4.raw.xpck'
 
+lik_GLV_STM = 'results/likelihoods.6.stm.xpck'
+lik_GLV_STX = 'results/likelihoods.6.stmx_4_3.xpck'
+lik_GLV_NNP = 'results/likelihoods.6.nnp_10_5.xpck'
+lik_GLV_LNP = 'results/likelihoods.6.lnp.xpck'
+lik_GLV_FOO = 'results/likelihoods.6.fast_oopsi_cv.xpck'
+lik_GLV_FOX = 'results/likelihoods.6.fast_oopsi.xpck'
+lik_GLV_YAK = 'results/likelihoods.6.yaksi.xpck'
+lik_GLV_RAW = 'results/likelihoods.6.raw.xpck'
+
 # locations of precomputed ROC scores
 auc_AOD_STM = 'results/auc.3.stm_ga.xpck'
-auc_AOD_STX = 'results/auc.3.stmx_1.xpck'
+auc_AOD_STX = 'results/auc.3.stmx_4_6.xpck'
 auc_AOD_NNP = 'results/auc.3.nnp_10_5.xpck'
 auc_AOD_LNP = 'results/auc.3.lnp.xpck'
 auc_AOD_FOO = 'results/auc.3.fast_oopsi_cv.xpck'
@@ -84,7 +102,7 @@ auc_AOD_YAK = 'results/auc.3.yaksi.xpck'
 auc_AOD_RAW = 'results/auc.3.raw.xpck'
 
 auc_EUL_STM = 'results/auc.4.stm.xpck'
-auc_EUL_STX = 'results/auc.4.stmx_1.xpck'
+auc_EUL_STX = 'results/auc.4.stmx_3_6.xpck'
 auc_EUL_NNP = 'results/auc.4.nnp_5_3.xpck'
 auc_EUL_LNP = 'results/auc.4.lnp.xpck'
 auc_EUL_FOO = 'results/auc.4.fast_oopsi_cv.xpck'
@@ -93,20 +111,33 @@ auc_EUL_SOO = 'results/auc.4.smc_oopsi.xpck'
 auc_EUL_YAK = 'results/auc.4.yaksi.xpck'
 auc_EUL_RAW = 'results/auc.4.raw.xpck'
 
-datasets = ['AOD', 'EUL']
-dataset_labels = ['V1/OGB1', 'Retina/OGB1']
+auc_GLV_STM = 'results/auc.6.stm.xpck'
+auc_GLV_STX = 'results/auc.6.stmx_4_3.xpck'
+auc_GLV_NNP = 'results/auc.6.nnp_10_5.xpck'
+auc_GLV_LNP = 'results/auc.6.lnp.xpck'
+auc_GLV_FOO = 'results/auc.6.fast_oopsi_cv.xpck'
+auc_GLV_FOX = 'results/auc.6.fast_oopsi.xpck'
+auc_GLV_YAK = 'results/auc.6.yaksi.xpck'
+auc_GLV_RAW = 'results/auc.6.raw.xpck'
+
+datasets = ['AOD', 'GLV', 'EUL']
+dataset_labels = ['\\small V1/OGB1/AOD', '\\small V1/OGB1/Glv', '\\small Retina/OGB1/Glv']
+#datasets = ['GLV']
+#dataset_labels = ['V1/GCamp6']
 
 # compare models
-#methods = ['STM', 'NNP', 'LNP']
-#method_labels = ['STM', 'MLP', 'LNP']
+methods = ['STM', 'NNP', 'LNP']
+method_labels = ['STM', 'MLP', 'LNP']
 
 # compare approaches
 #methods = ['STM', 'FOO', 'YAK', 'RAW']
 #method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
 # compare approaches without using spikes from dataset
-methods = ['STX', 'FOX', 'RAW']
-method_labels = ['STM', 'Vogelstein et al. (2010)', 'Raw']
+#methods = ['STX', 'FOX', 'RAW']
+#method_labels = ['STM', 'Vogelstein et al. (2010)', 'Raw']
+
+measures = ['corr', 'auc', 'info', 'info_relative']
 
 def get_corr(filepath, fps=25.):
 	"""
@@ -206,6 +237,39 @@ def get_info_all(filepath, fps=25.):
 
 
 
+def get_info_relative(filepath, fps=25.):
+	"""
+	Extracts average information rate normalized by entropy at given
+	sampling rate from experiment.
+	"""
+
+	if not os.path.exists(filepath):
+		print filepath, 'does not exist.'
+		return 0., 0.
+
+	results = Experiment(filepath)
+
+	idx = argmin(abs(mean(results['fps'], 1) - fps))
+
+	rinfo = (asarray(results['entropy']) + asarray(results['loglik'])) / asarray(results['entropy'])
+	sem = std(rinfo, 1, ddof=1)[idx] / sqrt(rinfo.shape[1])
+	rinfo = mean(rinfo, 1)[idx]
+
+	return rinfo, sem
+
+
+
+def get_info_relative_all(filepath, fps=25.):
+	"""
+	Extracts all normalized information rates at given sampling rate from experiment.
+	"""
+
+	results = Experiment(filepath)
+	idx = argmin(abs(mean(results['fps'], 1) - fps))
+	return (asarray(results['entropy'][idx]) + asarray(results['loglik'][idx])) / asarray(results['entropy'][idx])
+
+
+
 def sem_lm(values):
 	"""
 	Compute Loftus & Masson's (1994) standard error.
@@ -247,139 +311,190 @@ def main(argv):
 
 	xval = range(1, len(datasets) + 1)
 
-
 	# PLOT CORRELATIONS
 
-	print 'Correlation'
+	if 'corr' in measures:
+		print 'Correlation'
 
-	subplot(0, 0)
+		subplot(1, 0)
 
-	# compute Loftus & Masson's standard error
-	sem_adjusted = []
+		# compute Loftus & Masson's standard error
+		sem_adjusted = []
 
-	for dataset in datasets:
-		corr = []
-		for method in methods:
-			corr.append(get_corr_all(eval('corr_{0}_{1}'.format(dataset, method))))
-		sem_adjusted.append(sem_lm(corr))
+		for dataset in datasets:
+			corr = []
+			for method in methods:
+				corr.append(get_corr_all(eval('corr_{0}_{1}'.format(dataset, method))))
+			sem_adjusted.append(sem_lm(corr))
 
-	# compute and plot average correlation
-	for i, method in enumerate(methods):
-		yval = []
-		yerr = []
+		# compute and plot average correlation
+		for i, method in enumerate(methods):
+			yval = []
+			yerr = []
 
-		print '\tMethod: {0}'.format(method_labels[i])
+			print '\tMethod: {0}'.format(method_labels[i])
 
-		for k, dataset in enumerate(datasets):
-			corr, sem = get_corr(eval('corr_{0}_{1}'.format(dataset, method)))
-			yval.append(corr)
-			yerr.append(sem_adjusted[k] * 2.)
+			for k, dataset in enumerate(datasets):
+				corr, sem = get_corr(eval('corr_{0}_{1}'.format(dataset, method)))
+				yval.append(corr)
+				yerr.append(sem_adjusted[k] * 2.)
 
-			print '\t\t{1:.4f} ({0})'.format(dataset_labels[k], corr)
+				print '\t\t{1:.4f} ({0})'.format(dataset_labels[k], corr)
 
-		bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
+			bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
 
-		print
+			print
 
-	xtick(xval, dataset_labels)
-	axis(
-		xmin=0.5,
-		xmax=len(datasets) + .5,
-		ymin=0.,
-		width=2.5 * len(datasets),
-		height=5)
-	box('off')
-	ylabel(r'Correlation $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
-
-
-	# PLOT INFORMATION RATES
-
-	print
-	print 'Information gain'
-
-	subplot(0, 1)
-
-	# compute Loftus & Masson's standard error
-	sem_adjusted = []
-
-	for dataset in datasets:
-		corr = []
-		for method in methods:
-			corr.append(get_info_all(eval('lik_{0}_{1}'.format(dataset, method))))
-		sem_adjusted.append(sem_lm(corr))
-
-	# compute and plot average information rate
-	for i, method in enumerate(methods):
-		yval = []
-		yerr = []
-
-		print '\tMethod: {0}'.format(method_labels[i])
-
-		for k, dataset in enumerate(datasets):
-			info, sem = get_info(eval('lik_{0}_{1}'.format(dataset, method)))
-			yval.append(info)
-			yerr.append(sem_adjusted[k] * 2.)
-			print '\t\t{1:.4f} [bit/s] ({0})'.format(dataset_labels[k], info)
-
-		print
-
-		bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
-
-	xtick(xval, dataset_labels)
-	axis(
-		xmin=0.5,
-		xmax=len(datasets) + .5,
-		ymin=0.,
-		width=2.5 * len(datasets),
-		height=5)
-	box('off')
-	ylabel(r'Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
+		xtick(xval, dataset_labels)
+		axis(
+			xmin=0.5,
+			xmax=len(datasets) + .5,
+			ymin=0.,
+			width=2.5 * len(datasets),
+			height=5)
+		box('off')
+		ylabel(r'\small Correlation $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
 
 
 	# PLOT ROC SCORES
 
-	print 'Area under curve'
+	if 'auc' in measures:
 
-	subplot(0, 2)
+		print 'Area under curve'
 
-	# compute Loftus & Masson's standard error
-	sem_adjusted = []
+		subplot(1, 1)
 
-	for dataset in datasets:
-		auc = []
-		for method in methods:
-			auc.append(get_auc_all(eval('auc_{0}_{1}'.format(dataset, method))))
-		sem_adjusted.append(sem_lm(auc))
+		# compute Loftus & Masson's standard error
+		sem_adjusted = []
 
-	# compute and plot average aucelation
-	for i, method in enumerate(methods):
-		yval = []
-		yerr = []
+		for dataset in datasets:
+			auc = []
+			for method in methods:
+				auc.append(get_auc_all(eval('auc_{0}_{1}'.format(dataset, method))))
+			sem_adjusted.append(sem_lm(auc))
 
-		print '\tMethod: {0}'.format(method_labels[i])
+		# compute and plot average aucelation
+		for i, method in enumerate(methods):
+			yval = []
+			yerr = []
 
-		for k, dataset in enumerate(datasets):
-			auc, sem = get_auc(eval('auc_{0}_{1}'.format(dataset, method)))
-			yval.append(auc)
-			yerr.append(sem_adjusted[k] * 2.)
+			print '\tMethod: {0}'.format(method_labels[i])
 
-			print '\t\t{1:.4f} ({0})'.format(dataset_labels[k], auc)
+			for k, dataset in enumerate(datasets):
+				auc, sem = get_auc(eval('auc_{0}_{1}'.format(dataset, method)))
+				yval.append(auc)
+				yerr.append(sem_adjusted[k] * 2.)
 
-		bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
+				print '\t\t{1:.4f} ({0})'.format(dataset_labels[k], auc)
 
-		print
+			bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
 
-	xtick(xval, dataset_labels)
-	axis(
-		xmin=0.5,
-		xmax=len(datasets) + .5,
-		ymin=0.5,
-		ymax=.95,
-		width=2.5 * len(datasets),
-		height=5)
-	box('off')
-	ylabel(r'Area under curve $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
+			print
+
+		xtick(xval, dataset_labels)
+		axis(
+			xmin=0.5,
+			xmax=len(datasets) + .5,
+			ymin=0.5,
+			ymax=1.0,
+			width=2.5 * len(datasets),
+			height=5)
+		box('off')
+		ylabel(r'\small Area under curve $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
+
 	legend(*method_labels, location='outer north east')
+
+
+	# PLOT INFORMATION RATES
+
+	if 'info' in measures:
+		print
+		print 'Information gain'
+
+		subplot(0, 0)
+
+		# compute Loftus & Masson's standard error
+		sem_adjusted = []
+
+		for dataset in datasets:
+			info = []
+			for method in methods:
+				info.append(get_info_all(eval('lik_{0}_{1}'.format(dataset, method))))
+			sem_adjusted.append(sem_lm(info))
+
+		# compute and plot average information rate
+		for i, method in enumerate(methods):
+			yval = []
+			yerr = []
+
+			print '\tMethod: {0}'.format(method_labels[i])
+
+			for k, dataset in enumerate(datasets):
+				info, sem = get_info(eval('lik_{0}_{1}'.format(dataset, method)))
+				yval.append(info)
+				yerr.append(sem_adjusted[k] * 2.)
+				print '\t\t{1:.4f} [bit/s] ({0})'.format(dataset_labels[k], info)
+
+			print
+
+			bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
+
+		xtick(xval, dataset_labels)
+		axis(
+			xmin=0.5,
+			xmax=len(datasets) + .5,
+			ymin=0.,
+			ymax=4.,
+			width=2.5 * len(datasets),
+			height=5)
+		box('off')
+		ylabel(r'\small Information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$ [bit/s]')
+
+
+
+	# PLOT RELATIVE INFORMATION RATES
+
+	if 'info_relative' in measures:
+		print
+		print 'Relative information gain'
+
+		subplot(0, 1)
+
+		# compute Loftus & Masson's standard error
+		sem_adjusted = []
+
+		for dataset in datasets:
+			info = []
+			for method in methods:
+				info.append(get_info_relative_all(eval('lik_{0}_{1}'.format(dataset, method))))
+			sem_adjusted.append(sem_lm(info))
+
+		# compute and plot average information rate
+		for i, method in enumerate(methods):
+			yval = []
+			yerr = []
+
+			print '\tMethod: {0}'.format(method_labels[i])
+
+			for k, dataset in enumerate(datasets):
+				info, sem = get_info_relative(eval('lik_{0}_{1}'.format(dataset, method)))
+				yval.append(info)
+				yerr.append(sem_adjusted[k] * 2.)
+				print '\t\t{1:.4f} [bit/s] ({0})'.format(dataset_labels[k], info)
+
+			print
+
+			bar(xval, yval, yerr=yerr, color=eval('color_{0}'.format(method)), bar_width=.2)
+
+		xtick(xval, dataset_labels)
+		axis(
+			xmin=0.5,
+			xmax=len(datasets) + .5,
+			ymin=0.,
+			width=2.5 * len(datasets),
+			height=5)
+		box('off')
+		ylabel(r'\small Relative information gain $\pm$ 2 $\cdot$ SEM$^\text{L\&M}$')
 
 	savefig(filepath)
 

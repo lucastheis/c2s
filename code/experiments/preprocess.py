@@ -15,18 +15,23 @@ from calcium import preprocess
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('--input', '-i', type=str, required=True)
-	parser.add_argument('--output', '-o', type=str, required=True)
-	parser.add_argument('--fps', '-f', type=float, default=100.)
-	parser.add_argument('--matlab', '-m', type=str, default='')
-	parser.add_argument('--verbosity', '-v', type=int, default=1)
+	parser.add_argument('--input',     '-i', type=str,   required=True)
+	parser.add_argument('--output',    '-o', type=str,   required=True)
+	parser.add_argument('--filter',    '-s', type=int,   default=0)
+	parser.add_argument('--fps',       '-f', type=float, default=100.)
+	parser.add_argument('--matlab',    '-m', type=str,   default='')
+	parser.add_argument('--verbosity', '-v', type=int,   default=1)
 
 	args = parser.parse_args(argv[1:])
 
 	with open(args.input) as handle:
 		data = load(handle)
 
-	data = preprocess(data, fps=args.fps, verbosity=args.verbosity)
+	data = preprocess(
+		data,
+		fps=args.fps,
+		filter=args.filter if args.filter > 0 else None,
+		verbosity=args.verbosity)
 
 	with open(args.output, 'w') as handle:
 		dump(data, handle)

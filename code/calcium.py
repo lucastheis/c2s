@@ -5,7 +5,7 @@ Tools for the prediction of spike trains from calcium traces.
 from copy import copy, deepcopy
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
-from numpy import corrcoef, array, eye, dot
+from numpy import corrcoef, array, eye, dot, empty_like
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
@@ -23,7 +23,7 @@ try:
 except:
 	pass
 
-def preprocess(data, fps=100., verbosity=0):
+def preprocess(data, fps=100., filter=None, verbosity=0):
 	"""
 	Normalize calcium traces and spike trains.
 
@@ -32,11 +32,17 @@ def preprocess(data, fps=100., verbosity=0):
 		2. Normalize the range of the calcium trace by the 5th and 80th percentile.
 		3. Change the sampling rate of the calcium trace and spike train.
 
+	If `filter` is set, the first step is replaced by estimating and removing a baseline using
+	a percentile filter (40 seconds seems like a good value for the percentile filter).
+
 	@type  data: list
 	@param data: list of dictionaries containing calcium/fluorescence traces
 
 	@type  fps: float
 	@param fps: desired sampling rate of signals
+
+	@type  filter: float/None
+	@param filter: number of seconds used in percentile filter
 
 	@type  verbosity: int
 	@param verbosity: if positive, print messages indicating progress
@@ -53,11 +59,15 @@ def preprocess(data, fps=100., verbosity=0):
 
 		data[k]['fps'] = float(data[k]['fps'])
 
-		# remove any linear trends
-		x = arange(data[k]['calcium'].size)
-		a, b = robust_linear_regression(x, data[k]['calcium'])
+		if filter is None:
+			# remove any linear trends
+			x = arange(data[k]['calcium'].size)
+			a, b = robust_linear_regression(x, data[k]['calcium'])
 
-		data[k]['calcium'] = data[k]['calcium'] - (a * x + b)
+			data[k]['calcium'] = data[k]['calcium'] - (a * x + b)
+		else:
+			data[k]['calcium'] = data[k]['calcium'] - \
+				percentile_filter(data[k]['calcium'], window_length=int(data[k]['fps'] * filter), perc=5)
 
 		# normalize dispersion
 		calcium05 = percentile(data[k]['calcium'],  5)
@@ -82,7 +92,7 @@ def preprocess(data, fps=100., verbosity=0):
 			num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
 
 			if num_samples != data[k]['calcium'].size:
-				# factor by which number of samples will be changed
+				# factor by which number of samples will actually be changed
 				factor = num_samples / float(data[k]['calcium'].size)
 
 				# resample calcium signal
@@ -293,7 +303,7 @@ def predict(data, results, max_spikes_per_sec=1000., verbosity=1):
 	@param verbosity: if positive, print messages indicating progress
 
 	@rtype: list
-	@return: returns a list of dictionaries like C{data} but 
+	@return: returns a list of dictionaries like C{data} but with added predictions
 	"""
 
 	if type(data) is dict:
@@ -396,36 +406,32 @@ def evaluate(data, method='corr', **kwargs):
 		return array(corr)
 
 	elif method.lower().startswith('a'):
-		try:
-			auc = []
+		auc = []
 
-			# compute area under ROC curve
-			for entry in data:
-				# downsample firing rates
-				predictions = downsample(entry['predictions'], kwargs['downsampling']).ravel()
-				spikes = array(downsample(entry['spikes'], kwargs['downsampling']).ravel() + .5, dtype=int)
+		# compute area under ROC curve
+		for entry in data:
+			# downsample firing rates
+			predictions = downsample(entry['predictions'], kwargs['downsampling']).ravel()
+			spikes = array(downsample(entry['spikes'], kwargs['downsampling']).ravel() + .5, dtype=int)
 
-				# marks bins containing spikes
+			# marks bins containing spikes
+			mask = spikes > .5
+
+			# collect positive and negative examples
+			neg = predictions[-mask]
+			pos = []
+
+			# this loop is necessary because any bin can contain more than one spike
+			while any(mask):
+				pos.append(predictions[mask])
+				spikes -= 1
 				mask = spikes > .5
+			pos = hstack(pos)
 
-				# collect positive and negative examples
-				neg = predictions[-mask]
-				pos = []
+			# compute area under curve
+			auc.append(roc(pos, neg)[0])
 
-				# this is necessary because any bin can contain more than one spike
-				while any(mask):
-					pos.append(predictions[mask])
-					spikes -= 1
-					mask = spikes > .5
-				pos = hstack(pos)
-
-				# compute area under curve
-				auc.append(roc(pos, neg)[0])
-
-			return array(auc)
-
-		except NameError:
-			print '`real_ROC` is not defined. You probably still need to compile `roc.pyx` using Cython.'
+		return array(auc)
 
 	else:
 		# downsample predictions and spike trains
@@ -598,6 +604,23 @@ def robust_linear_regression(x, y, num_scales=3, max_iter=1000):
 	b = (b + float(model.means)) - a * m
 
 	return a, b
+
+
+
+def percentile_filter(x, window_length, perc=5):
+	"""
+	For each point in a signal, computes a percentile from a window surrounding it.
+	"""
+
+	y = empty_like(x)
+	d = window_length // 2 + 1
+
+	for t in range(len(x)):
+		fr = max([t - d + 1, 0])
+		to = t + d
+		y[t] = percentile(x[fr:to], perc)
+
+	return y
 
 
 

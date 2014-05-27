@@ -12,7 +12,7 @@ sys.path.append('./code')
 
 from argparse import ArgumentParser
 from pickle import load
-from numpy import mean, std, corrcoef, sqrt
+from numpy import mean, std, corrcoef, sqrt, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
 from calcium import train, predict, preprocess
@@ -47,12 +47,25 @@ def main(argv):
 	predictions = []
 	correlations = []
 
-	for i in range(len(data)):
+	# list of all cells
+	if 'cell_num' in data[0]:
+		# several trials/entries may belong to the same cell
+		cells = unique([entry['cell_num'] for entry in data])
+	else:
+		# one cell corresponds to one trial/entry
+		cells = range(len(data))
+		for i in cells:
+			data[i]['cell_num'] = i
+
+	for i in cells:
+		data_train = [entry for entry in data if entry['cell_num'] != i]
+		data_test = [entry for entry in data if entry['cell_num'] == i]
+
 		print 'Test cell: {0}'.format(i)
 
 		# train on all cells but cell i
 		results = train(
-			data=[entry for j, entry in enumerate(data) if j != i],
+			data=data_train,
 			num_valid=args.num_valid,
 			num_models=args.num_models,
 			var_explained=args.var_explained,
@@ -68,22 +81,10 @@ def main(argv):
 			verbosity=1)
 
 		# predict responses of cell i
-		predictions.append(
-			predict(data[i], results, verbosity=1)[0]['predictions'])
-
-		# compute correlation with true spikes
-		correlations.append(
-			corrcoef(data[i]['spikes'], predictions[i])[0, 1])
-
-		print 'Correlation: {0:.3f}'.format(correlations[-1])
-
-	print 'Correlation: {0:.3f} +-  {1:.3f} (SEM)'.format(
-			mean(correlations),
-			std(correlations) / sqrt(len(correlations)))
+		predict(data_test, results, verbosity=1)
 
 	experiment['args'] = args
-	experiment['correlations'] = correlations
-	experiment['predictions'] = predictions
+	experiment['predictions'] = [entry['predictions'] for entry in data]
 
 	if os.path.isdir(args.output):
 		experiment.save(os.path.join(args.output, 'leave_one_out.{0}.{1}.xpck'))

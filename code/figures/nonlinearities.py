@@ -15,9 +15,9 @@ from comparison import *
 from calcium import downsample
 from pgf import *
 
-datasets = ['AOD', 'EUL']
-dataset_labels = ['V1/OGB1', 'Retina/OGB1']
-dataset_filepaths = ['data/data.3.preprocessed.pck', 'data/data.4.preprocessed.pck']
+datasets = ['AOD', 'GLV', 'EUL']
+dataset_labels = ['V1/OGB1/AOD', 'V1/OGB1/Glv', 'Retina/OGB1/Glv']
+dataset_filepaths = ['data/data.3.preprocessed.pck', 'data/data.6.preprocessed.pck', 'data/data.4.preprocessed.pck']
 methods = ['STM', 'FOO', 'YAK', 'RAW']
 method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
