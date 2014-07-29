@@ -107,6 +107,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 			# spike times in bins
 			spike_times = asarray(data[k]['spike_times'] * (data[k]['fps'] / 1000.), dtype=int).ravel()
 			spike_times = spike_times[spike_times < num_samples]
+			spike_times = spike_times[spike_times >= 0]
 
 			# create binned spike train
 			data[k]['spikes'] = zeros([1, num_samples], dtype='uint16')
