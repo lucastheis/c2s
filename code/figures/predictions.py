@@ -27,8 +27,10 @@ from comparison import *
 #dataset_paths = ['data/data.2.preprocessed.pck']
 #datasets = ['EUL']
 #dataset_paths = ['data/data.4.preprocessed.pck']
-datasets = ['GLV']
-dataset_paths = ['data/data.6.preprocessed.pck']
+#datasets = ['GLV']
+#dataset_paths = ['data/data.6.preprocessed.pck']
+datasets = ['GAR']
+dataset_paths = ['data/data.7.preprocessed.pck']
 
 # choose which methods to visualize
 methods = ['STM', 'STX', 'FOO', 'YAK']

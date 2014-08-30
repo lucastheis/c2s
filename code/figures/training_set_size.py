@@ -94,6 +94,8 @@ def main(argv):
 		info_05p = []
 		info_95p = []
 
+		info_relative_avg = []
+
 		auc_avg = []
 		auc_std = []
 		auc_05p = []
@@ -110,6 +112,8 @@ def main(argv):
 			info_05p.append(percentile(info[n], 5))
 			info_95p.append(percentile(info[n], 95))
 
+			info_relative_avg.append(mean(info_relative[n]))
+
 			auc_avg.append(mean(auc[n]))
 			auc_std.append(std(auc[n], ddof=1))
 			auc_05p.append(percentile(auc[n], 5))
@@ -125,7 +129,7 @@ def main(argv):
 		info_05p = asarray(info_05p)
 		info_95p = asarray(info_95p)
 
-		info_relative_avg = asarray(info_avg)
+		info_relative_avg = asarray(info_relative_avg)
 
 		auc_avg = asarray(auc_avg)
 		auc_std = asarray(auc_std)
@@ -144,7 +148,7 @@ def main(argv):
 		ylim(0, .6)
 		xlim(0, 20)
 		ytick([0., 0.1, 0.2, 0.3, 0.4, 0.5])
-		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		xtick([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
 		axis(width=5, height=5, axis_on_top=False)
 		box('off')
 		grid('on')
@@ -156,9 +160,9 @@ def main(argv):
 #		plot(num_cells, auc_95p, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=1, pgf_options=['forget plot'])
 		xlabel('Number of training cells')
 		ylabel('Area under curve')
-		ylim(.5, .95)
+		ylim(.5, 1.0)
 		xlim(0, 20)
-		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		xtick([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
 		axis(width=5, height=5, axis_on_top=False)
 		box('off')
 		grid('on')
@@ -176,7 +180,7 @@ def main(argv):
 		ylabel('Information gain [bit/s]')
 		ylim(0, 4.5)
 		xlim(0, 20)
-		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		xtick([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
 		axis(width=5, height=5, axis_on_top=False)
 		box('off')
 		grid('on')
@@ -190,9 +194,9 @@ def main(argv):
 		plot(num_cells, info_relative_avg, line_styles[k % len(line_styles)], color=colors[k % len(colors)], line_width=2)
 		xlabel('Number of training cells')
 		ylabel('Relative Information gain')
-		ylim(0, 4.5)
+		ylim(0, 0.4)
 		xlim(0, 20)
-		xtick([0, 2, 4, 6, 8, 10, 12, 14])
+		xtick([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
 		axis(width=5, height=5, axis_on_top=False)
 		box('off')
 		grid('on')

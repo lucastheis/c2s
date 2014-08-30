@@ -23,14 +23,20 @@ filepath = 'figures/performance_curves.pdf'
 #methods = ['STM', 'NNP', 'FOO', 'LNP']
 #method_labels = ['STM', 'NNP', 'FAST-OOPSI', 'LNP']
 
-datasets = ['EUL', 'GLV', 'AOD']
-dataset_labels = ['Retina/OGB1/Galvo', 'V1/OGB1/Galvo', 'V1/OGB1/AOD']
-methods = ['STM', 'FOO', 'YAK', 'RAW']
-method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
+#datasets = ['EUL', 'GLV', 'AOD']
+#dataset_labels = ['Retina/OGB1/Galvo', 'V1/OGB1/Galvo', 'V1/OGB1/AOD']
+#methods = ['STM', 'FOO', 'YAK', 'RAW']
+#method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
-#datasets = ['AOD']
-#methods = ['STX', 'FOX']
-#method_labels = ['STM', 'Vogelstein et al. (2010)']
+#datasets = ['EUL', 'GLV', 'AOD']
+#dataset_labels = ['Retina/OGB1/Galvo', 'V1/OGB1/Galvo', 'V1/OGB1/AOD']
+#methods = ['STX', 'FOX', 'RAW']
+#method_labels = ['STM', 'Vogelstein et al. (2010)', 'Raw']
+
+datasets = ['GAR']
+dataset_labels = ['']
+methods = ['STM', 'STX', 'FOO', 'YAK', 'RAW']
+method_labels = ['STM', 'STM$^*$', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
 def get_corr(filepath):
 	"""

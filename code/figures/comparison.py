@@ -58,6 +58,16 @@ corr_GLV_FOX = 'results/correlations.6.fast_oopsi.xpck'
 corr_GLV_YAK = 'results/correlations.6.yaksi.xpck'
 corr_GLV_RAW = 'results/correlations.6.raw.xpck'
 
+corr_GAR_STM = 'results/correlations.7.stm.xpck'
+corr_GAR_STX = 'results/correlations.7.stmx_3_6.xpck'
+corr_GAR_NNP = 'results/correlations.7.nnp_5_3.xpck'
+corr_GAR_LNP = 'results/correlations.7.lnp.xpck'
+corr_GAR_FOO = 'results/correlations.7.fast_oopsi_cv.xpck'
+corr_GAR_FOX = 'results/correlations.7.fast_oopsi.xpck'
+corr_GAR_SOO = 'results/correlations.7.smc_oopsi.xpck'
+corr_GAR_YAK = 'results/correlations.7.yaksi.xpck'
+corr_GAR_RAW = 'results/correlations.7.raw.xpck'
+
 # locations of precomputed likelihoods
 lik_AOD_STM = 'results/likelihoods.3.stm_ga.xpck'
 lik_AOD_STX = 'results/likelihoods.3.stmx_4_6.xpck'
@@ -88,6 +98,16 @@ lik_GLV_FOO = 'results/likelihoods.6.fast_oopsi_cv.xpck'
 lik_GLV_FOX = 'results/likelihoods.6.fast_oopsi.xpck'
 lik_GLV_YAK = 'results/likelihoods.6.yaksi.xpck'
 lik_GLV_RAW = 'results/likelihoods.6.raw.xpck'
+
+lik_GAR_STM = 'results/likelihoods.7.stm.xpck'
+lik_GAR_STX = 'results/likelihoods.7.stmx_3_6.xpck'
+lik_GAR_NNP = 'results/likelihoods.7.nnp_5_3.xpck'
+lik_GAR_LNP = 'results/likelihoods.7.lnp.xpck'
+lik_GAR_FOO = 'results/likelihoods.7.fast_oopsi_cv.xpck'
+lik_GAR_FOX = 'results/likelihoods.7.fast_oopsi.xpck'
+lik_GAR_SOO = 'results/likelihoods.7.smc_oopsi.xpck'
+lik_GAR_YAK = 'results/likelihoods.7.yaksi.xpck'
+lik_GAR_RAW = 'results/likelihoods.7.raw.xpck'
 
 # locations of precomputed ROC scores
 auc_AOD_STM = 'results/auc.3.stm_ga.xpck'
@@ -120,18 +140,30 @@ auc_GLV_FOX = 'results/auc.6.fast_oopsi.xpck'
 auc_GLV_YAK = 'results/auc.6.yaksi.xpck'
 auc_GLV_RAW = 'results/auc.6.raw.xpck'
 
+auc_GAR_STM = 'results/auc.7.stm.xpck'
+auc_GAR_STX = 'results/auc.7.stmx_3_6.xpck'
+auc_GAR_NNP = 'results/auc.7.nnp_5_3.xpck'
+auc_GAR_LNP = 'results/auc.7.lnp.xpck'
+auc_GAR_FOO = 'results/auc.7.fast_oopsi_cv.xpck'
+auc_GAR_FOX = 'results/auc.7.fast_oopsi.xpck'
+auc_GAR_SOO = 'results/auc.7.smc_oopsi.xpck'
+auc_GAR_YAK = 'results/auc.7.yaksi.xpck'
+auc_GAR_RAW = 'results/auc.7.raw.xpck'
+
 datasets = ['AOD', 'GLV', 'EUL']
 dataset_labels = ['\\small V1/OGB1/AOD', '\\small V1/OGB1/Glv', '\\small Retina/OGB1/Glv']
 #datasets = ['GLV']
 #dataset_labels = ['V1/GCamp6']
+datasets = ['GAR']
+dataset_labels = ['']
 
 # compare models
-methods = ['STM', 'NNP', 'LNP']
-method_labels = ['STM', 'MLP', 'LNP']
+#methods = ['STM', 'NNP', 'LNP']
+#method_labels = ['STM', 'MLP', 'LNP']
 
 # compare approaches
-#methods = ['STM', 'FOO', 'YAK', 'RAW']
-#method_labels = ['STM', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
+methods = ['STM', 'STX', 'FOO', 'YAK', 'RAW']
+method_labels = ['STM', 'STM$^*$', 'Vogelstein et al. (2010)', 'Yaksi \& Friedrich (2006)', 'Raw']
 
 # compare approaches without using spikes from dataset
 #methods = ['STX', 'FOX', 'RAW']
