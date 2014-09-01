@@ -134,6 +134,9 @@ def train(data,
 
 	@type  data: list
 	@param data: list of dictionaries containig calcium/fluorescence traces
+
+	@type  num_valid: int
+	@param num_valid: number of cells used for early stopping based on a validation set
 	
 	@type  num_models: int
 	@param num_models: to counter local optima and other randomness, multiple models can be trained

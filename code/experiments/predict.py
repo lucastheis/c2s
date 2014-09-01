@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Train a spike-triggered mixture model (STM) to predict spikes from calcium traces.
+This code needs to be rewritten.
 """
 
 import sys
@@ -34,48 +34,48 @@ def main(argv):
 	results = Experiment(args.models)
 
 	data = predict(data, results['models'], verbosity=1)
-
-	cc_all = []
-	fps_all = []
-
-	for cell_id, entry in enumerate(data):
-		predictions = entry['predictions'].ravel()
-		spikes = entry['spikes'].ravel()
-		fps = entry['fps']
-		fps_all.append([fps])
-		cc = corrcoef(predictions, spikes)[0, 1]
-		cc_all.append([cc])
-
-		print '{0:5}'.format(cell_id),
-		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
-
-		for _ in range(3):
-			# reduce sampling rate
-			if spikes.size % 2:
-				spikes = spikes[:-2:2] + spikes[1::2]
-				predictions = predictions[:-2:2] + predictions[1::2]
-			else:
-				spikes = spikes[::2] + spikes[1::2]
-				predictions = predictions[::2] + predictions[1::2]
-
-			fps /= 2.
-			fps_all[-1].append(fps)
-			cc = corrcoef(predictions, spikes)[0, 1]
-			cc_all[-1].append(cc)
-
-			print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
-
-		print
-
-	
-	print '=' * 70
-	print '{0:5}'.format('Avg.'),
-
-	cc_all = mean(cc_all, 0)
-	fps_all = mean(fps_all, 0)
-
-	for cc, fps in zip(cc_all, fps_all):
-		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
+#
+#	cc_all = []
+#	fps_all = []
+#
+#	for cell_id, entry in enumerate(data):
+#		predictions = entry['predictions'].ravel()
+#		spikes = entry['spikes'].ravel()
+#		fps = entry['fps']
+#		fps_all.append([fps])
+#		cc = corrcoef(predictions, spikes)[0, 1]
+#		cc_all.append([cc])
+#
+#		print '{0:5}'.format(cell_id),
+#		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
+#
+#		for _ in range(3):
+#			# reduce sampling rate
+#			if spikes.size % 2:
+#				spikes = spikes[:-2:2] + spikes[1::2]
+#				predictions = predictions[:-2:2] + predictions[1::2]
+#			else:
+#				spikes = spikes[::2] + spikes[1::2]
+#				predictions = predictions[::2] + predictions[1::2]
+#
+#			fps /= 2.
+#			fps_all[-1].append(fps)
+#			cc = corrcoef(predictions, spikes)[0, 1]
+#			cc_all[-1].append(cc)
+#
+#			print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
+#
+#		print
+#
+#	
+#	print '=' * 70
+#	print '{0:5}'.format('Avg.'),
+#
+#	cc_all = mean(cc_all, 0)
+#	fps_all = mean(fps_all, 0)
+#
+#	for cc, fps in zip(cc_all, fps_all):
+#		print '{0:5.3f} ({1:3.1f} Hz)'.format(cc, fps),
 
 	return 0
 
