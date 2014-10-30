@@ -1,6 +1,63 @@
 """
 Tools for the prediction of spike trains from calcium traces.
+
+This module contains functions for predicting spikes from fluorescence traces obtained
+from two-photon calcium images. Data should be stored as a list of dictionaries, where
+each dictionary corresponds to a cell or recording. Each dictionary has to contain at least
+the entries C{calcium} and C{fps}, which correspond to the recorded fluorescence trace and
+its sampling rate in frames per second.
+
+	>>> data = [
+	>>>	{'calcium': [[0., 0., 0., 0.]],     'fps': 10.4},
+	>>>	{'calcium': [[0., 0., 0., 0., 0.]], 'fps': 12.1}]
+
+The data here is only used to illustrate the format. Each calcium trace is expected to
+be given as a 1xT array, where T is the number of recorded frames. After importing the
+module,
+
+	>>> import calcium
+
+we can use L{preprocess<calcium.preprocess>} to normalize the calcium traces and
+C{predict<calcium.predict>} to predict firing rates:
+
+	>>> data = calcium.preprocess(data)
+	>>> data = calcium.predict(data)
+
+The predictions for the i-th cell can be accessed via:
+
+	>>> data[i]['predictions']
+
+Simultaneously recorded spikes can be stored either as binned traces
+
+	>>> data = [
+	>>>	{'calcium': [[0., 0., 0., 0.]],     'spikes': [[0, 1, 0, 2]],    'fps': 10.4},
+	>>>	{'calcium': [[0., 0., 0., 0., 0.]], 'spikes': [[0, 0, 3, 1, 0]], 'fps': 12.1}]
+
+or, preferably, as spike times in milliseconds:
+
+	>>> data = [
+	>>>	{'calcium': [[0., 0., 0., 0.]],     'spike_times': [[15.1, 35.2, 38.1]],      'fps': 10.4},
+	>>>	{'calcium': [[0., 0., 0., 0., 0.]], 'spike_times': [[24.2, 28.4 32.7, 40.2]], 'fps': 12.1}]
+
+The preprocessing function will automatically compute the other format of the spike trains if one
+of them is given. Using the method L{train<calcium.train>}, we can train a model to predict spikes from
+fluorescence traces
+
+	>>> data = calcium.preprocess(data)
+	>>> results = calcium.train(data)
+
+and then use it to make predictions:
+
+	>>> data = calcium.predict(data, results)
+
+It is important that the data used for training undergoes the same preprocessing as the data
+used when making predictions.
 """
+
+__license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
+__author__ = 'Lucas Theis <lucas@theis.io>'
+__docformat__ = 'epytext'
+__version__ = '0.1.0dev'
 
 from copy import copy, deepcopy
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
@@ -130,7 +187,38 @@ def train(data,
 		training_parameters={},
 		regularize=0.):
 	"""
-	Trains STMs on the task of predicting spike trains from calcium traces.
+	Trains models on the task of predicting spike trains from calcium traces.
+
+	This function takes a dataset and trains one or several models (STMs) to predict spikes
+	from calcium signals. By default, the method trains a single model on 1000ms windows
+	extracted from the calcium (fluorescence) traces.
+
+		>>> results = train(data)
+
+	See above for an explanation of the expected data format. A more detailed example:
+
+		>>> results = train(data,
+		>>>	num_models=4,
+		>>>	var_explained=98.,
+		>>>	window_length=800.,
+		>>>	model_parameters={
+		>>>		'num_components': 3,
+		>>>		'num_features': 2},
+		>>>	training_parameters={
+		>>>		'max_iter': 3000,
+		>>>		'threshold': 1e-9})
+
+	For an explanation on the model and training parameters, please see the
+	U{CMT documentation<http://lucastheis.github.io/cmt/>}. The training procedure
+	returns a dictionary containing the trained models, and things needed for handling
+	and preprocessing calcium traces.
+
+		>>> results['models']
+		>>> results['pca']
+		>>> results['input_mask']
+		>>> results['output_mask']
+
+	@see: L{predict<calcium.predict>}
 
 	@type  data: list
 	@param data: list of dictionaries containig calcium/fluorescence traces
@@ -154,7 +242,7 @@ def train(data,
 	@param keep_all: if False, only keep the best of all trained models
 
 	@type  regularize: float
-	@param regularize: strength with which model filters are regularized
+	@param regularize: strength with which model filters are regularized for smoothness
 
 	@rtype: dict
 	@return: dictionary containing trained models and things needed for preprocessing
@@ -315,6 +403,9 @@ def predict(data, results, max_spikes_per_sec=1000., verbosity=1):
 	if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
 		data = [{'calcium': data}]
 
+	# create copies of dictionaries (doesn't create copies of actual data arrays)
+	data = [copy(entry) for entry in data]
+
 	for entry in data:
 		# extract windows from fluorescence trace and reduce dimensionality
 		entry['inputs'] = extract_windows(
@@ -358,7 +449,7 @@ def evaluate(data, method='corr', **kwargs):
 	or area under the ROC curve.
 
 	@type  data: list
-	@param data: list of dictionaries as produced by L{predict}
+	@param data: list of dictionaries as produced by L{predict<calcium.predict>}
 
 	@type  method: string
 	@param method: either 'loglik', 'info', 'corr', or 'auc' (default: 'corr')
