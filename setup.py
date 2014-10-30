@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
+import sys
+
+sys.path.append('./code')
+
 from setuptools import setup
+from calcium import __version__
 
 setup(
 	name='calcium',
@@ -9,9 +14,10 @@ setup(
 	author_email='lucas@theis.io',
 	description='A toolbox for inferring spikes from two-photon imaging calcium traces.',
 	url='https://github.com/lucastheis/calcium/',
-	packages=find_packages(),
-	include_package_data=True,
+	packages=['calcium'],
+	scripts=[],
 	install_requires=('cmt>=1.5.0'),
+	zip_safe=False,
 	license='MIT',
 	classifiers=(
 		'Development Status :: 2 - Pre-Alpha',
