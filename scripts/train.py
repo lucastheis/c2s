@@ -2,6 +2,10 @@
 
 """
 Trains STMs for the prediction of spikes from calcium traces.
+
+Examples:
+
+	c2s train -d data.pck
 """
 
 import os
@@ -15,38 +19,54 @@ from numpy import mean, corrcoef
 from numpy.random import rand, randint
 from cmt.utils import random_select
 from calcium import train, predict, preprocess
-from tools import Experiment
+from calcium.experiment import Experiment
 
 def main(argv):
 	experiment = Experiment()
 
 	parser = ArgumentParser(argv[0], description=__doc__)
 
-	parser.add_argument('--dataset',        '-d', type=str,   required=True)
-	parser.add_argument('--num_components', '-c', type=int,   default=3)
-	parser.add_argument('--num_features',   '-f', type=int,   default=2)
-	parser.add_argument('--num_models',     '-m', type=int,   default=4)
-	parser.add_argument('--keep_all',       '-k', type=int,   default=1)
-	parser.add_argument('--finetune',       '-n', type=int,   default=0)
-	parser.add_argument('--num_train',      '-t', type=int,   default=0)
-	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
-	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
-	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
-	parser.add_argument('--regularize',     '-r', type=float, default=0.)
-	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
-	parser.add_argument('--output',         '-o', type=str,   default='results/')
+	parser.add_argument('--dataset',        '-d', type=str,   required=True, nargs='+',
+		help='Dataset(s) used for training.')
+	parser.add_argument('--num_components', '-c', type=int,   default=3,
+		help='Number of components used in STM model (default: 3).')
+	parser.add_argument('--num_features',   '-f', type=int,   default=2,
+		help='Number of quadratic features used in STM model (default: 2).')
+	parser.add_argument('--num_models',     '-m', type=int,   default=4,
+		help='Number of models trained (predictions will be averaged across models, default: 4).')
+	parser.add_argument('--keep_all',       '-k', type=int,   default=1,
+		help='If set to 0, only the best model of all trained models is kept (default: 1).')
+	parser.add_argument('--finetune',       '-n', type=int,   default=0,
+		help='If set to 1, enables another finetuning step which is performed after training (default: 0).')
+	parser.add_argument('--num_train',      '-t', type=int,   default=0,
+		help='If specified, a (random) subset of cells is used for training.')
+	parser.add_argument('--num_valid',      '-s', type=int,   default=0,
+		help='If specified, a (random) subset of cells will be used for early stopping based on validation error.')
+	parser.add_argument('--var_explained',  '-e', type=float, default=95.,
+		help='Controls the degree of dimensionality reduction of fluorescence windows (default: 95).')
+	parser.add_argument('--window_length',  '-w', type=float, default=1000.,
+		help='Length of windows extracted from calcium signal for prediction (in milliseconds, default: 1000).')
+	parser.add_argument('--regularize',     '-r', type=float, default=0.,
+		help='Amount of parameter regularization (filters are regularized for smoothness, default: 0.).')
+	parser.add_argument('--preprocess',     '-p', type=int,   default=0,
+		help='If the data is not already preprocessed, this can be used to do it.')
+	parser.add_argument('--output',         '-o', type=str,   default='results/',
+		help='Directory or file where trained models will be stored.')
+	parser.add_argument('--verbosity',      '-v'  type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
 
-	with open(args.dataset) as handle:
-		data = load(handle)
+	if not args.dataset:
+		print 'You have to specify at least 1 dataset.'
+		return 0
+
+	data = []
+	for dataset in args.dataset:
+		with open(dataset) as handle:
+			data = data + load(handle)
 
 	if args.preprocess:
-		data = preprocess(data)
-
-
-
-	### TRAINING
+		data = preprocess(data, args.verbosity)
 
 	# pick cells for training
 	if args.num_train > 0:
@@ -67,50 +87,11 @@ def main(argv):
 		training_parameters={
 			'verbosity': 1},
 		regularize=args.regularize,
-		verbosity=1)
-
-
-
-	### PREDICTION
-
-	data = predict(data, models, verbosity=1)
-
-
-
-	### EVALUATION
-
-	print 'Evaluating...'
-
-	corr = []
-	corr_train = []
-	corr_test = []
-	predictions = []
-
-	for cell_id, entry in enumerate(data):
-		predictions.append(entry['predictions'])
-		corr.append(corrcoef(entry['predictions'], entry['spikes'])[0, 1])
-
-		if cell_id in training_cells:
-			corr_train.append(corr[-1])
-		else:
-			corr_test.append(corr[-1])
-
-	corr = mean(corr)
-	corr_test = mean(corr_test)
-	corr_train = mean(corr_train)
-
-	print 'Correlation:'
-	print '\t{0:.5f} (training)'.format(corr_train)
-	print '\t{0:.5f} (test)'.format(corr_test)
-	print '\t{0:.5f} (total)'.format(corr)
+		verbosity=args.verbosity)
 
 	experiment['args'] = args
 	experiment['training_cells'] = training_cells
 	experiment['models'] = models
-	experiment['corr'] = corr
-	experiment['corr_test'] = corr_test
-	experiment['corr_train'] = corr_train
-	experiment['predictions'] = predictions
 
 	if os.path.isdir(args.output):
 		experiment.save(os.path.join(args.output, 'train.{0}.{1}.xpck'))
