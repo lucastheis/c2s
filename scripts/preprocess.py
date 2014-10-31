@@ -6,12 +6,10 @@ Preprocess data.
 
 import sys
 
-sys.path.append('./code')
-
 from argparse import ArgumentParser
 from pickle import load, dump
 from scipy.io import savemat
-from calcium import preprocess
+from c2s import preprocess
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)

@@ -6,18 +6,13 @@ This code needs to be rewritten.
 
 import sys
 
-sys.path.append('./code')
-
 from argparse import ArgumentParser
 from pickle import load
 from numpy import corrcoef, mean
-from calcium import predict, preprocess
-from calcium.experiment import Experiment
+from c2s import predict, preprocess
+from c2s.experiment import Experiment
 
 def main(argv):
-	experiment = Experiment()
-
-	# parse input arguments
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('--dataset',    '-d', type=str, required=True)
 	parser.add_argument('--models',     '-m', type=str, default='')
@@ -25,6 +20,8 @@ def main(argv):
 	parser.add_argument('--verbosity',  '-v', type=int, default=1)
 
 	args = parser.parse_args(argv[1:])
+
+	experiment = Experiment()
 
 	# load data
 	with open(args.dataset) as handle:

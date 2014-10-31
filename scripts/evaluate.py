@@ -7,20 +7,15 @@ Evaluates firing rate predictions in terms of correlations or Poisson likelihood
 import os
 import sys
 
-sys.path.append('./code')
-
 from argparse import ArgumentParser
 from scipy.io import loadmat
 from pickle import load
 from numpy import mean, min, hstack
-from tools import Experiment
-from calcium import evaluate
+from c2s import evaluate
+from c2s.experiment import Experiment
 
 def main(argv):
-	experiment = Experiment()
-
 	parser = ArgumentParser(argv[0], description=__doc__)
-
 	parser.add_argument('--results',      '-r', type=str, default='')
 	parser.add_argument('--dataset',      '-d', type=str, default='')
 	parser.add_argument('--downsampling', '-s', type=int, default=[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50], nargs='+')
@@ -30,6 +25,8 @@ def main(argv):
 	parser.add_argument('--output',       '-o', type=str, default='results/')
 
 	args, _ = parser.parse_known_args(argv[1:])
+
+	experiment = Experiment()
 
 	if args.results == '':
 		# use raw calcium signal for prediction

@@ -18,14 +18,11 @@ from pickle import load
 from numpy import mean, corrcoef
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from calcium import train, predict, preprocess
-from calcium.experiment import Experiment
+from c2s import train, predict, preprocess
+from c2s.experiment import Experiment
 
 def main(argv):
-	experiment = Experiment()
-
 	parser = ArgumentParser(argv[0], description=__doc__)
-
 	parser.add_argument('--dataset',        '-d', type=str,   required=True, nargs='+',
 		help='Dataset(s) used for training.')
 	parser.add_argument('--num_components', '-c', type=int,   default=3,
@@ -52,9 +49,15 @@ def main(argv):
 		help='If the data is not already preprocessed, this can be used to do it.')
 	parser.add_argument('--output',         '-o', type=str,   default='results/',
 		help='Directory or file where trained models will be stored.')
-	parser.add_argument('--verbosity',      '-v'  type=int,   default=1)
+	parser.add_argument('--verbosity',      '-v', type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
+
+	experiment = Experiment()
+
+	print os.path.isdir(args.output)
+	print os.path.join(args.output, 'train.{0}.{1}.xpck')
+	return 0
 
 	if not args.dataset:
 		print 'You have to specify at least 1 dataset.'
@@ -93,7 +96,7 @@ def main(argv):
 	experiment['training_cells'] = training_cells
 	experiment['models'] = models
 
-	if os.path.isdir(args.output):
+	if os.path.isdir(args.output) or args.output == 'results/':
 		experiment.save(os.path.join(args.output, 'train.{0}.{1}.xpck'))
 	else:
 		experiment.save(args.output)

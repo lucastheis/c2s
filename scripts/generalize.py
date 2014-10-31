@@ -7,21 +7,16 @@ Trains STMs on one dataset and predict responses of a second dataset.
 import os
 import sys
 
-sys.path.append('./code')
-
 from argparse import ArgumentParser
 from pickle import load
 from numpy import mean, corrcoef
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from calcium import train, predict, preprocess
-from tools import Experiment
+from c2s import train, predict, preprocess
+from c2s.experiment import Experiment
 
 def main(argv):
-	experiment = Experiment()
-
 	parser = ArgumentParser(argv[0], description=__doc__)
-
 	parser.add_argument('--dataset_train',  '-z', type=str,   required=True, nargs='+')
 	parser.add_argument('--dataset_test',   '-s', type=str,   required=True)
 	parser.add_argument('--num_components', '-c', type=int,   default=3)
@@ -38,6 +33,8 @@ def main(argv):
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
 	args, _ = parser.parse_known_args(argv[1:])
+
+	experiment = Experiment()
 
 	# load training data
 	data = []

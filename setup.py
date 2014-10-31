@@ -5,19 +5,18 @@ import sys
 sys.path.append('./code')
 
 from setuptools import setup
-from calcium import __version__
+from c2s import __version__
 
 setup(
-	name='calcium',
+	name='c2s',
 	version=__version__,
 	author='Lucas Theis',
 	author_email='lucas@theis.io',
 	description='A toolbox for inferring spikes from two-photon imaging calcium traces.',
 	url='https://github.com/lucastheis/calcium/',
-	packages=['calcium'],
+	packages=['c2s'],
 	scripts=[],
 	install_requires=('cmt>=1.5.0'),
-	zip_safe=False,
 	license='MIT',
 	classifiers=(
 		'Development Status :: 2 - Pre-Alpha',

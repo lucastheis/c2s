@@ -15,13 +15,13 @@ The data here is only used to illustrate the format. Each calcium trace is expec
 be given as a 1xT array, where T is the number of recorded frames. After importing the
 module,
 
-	>>> import calcium
+	>>> import c2s
 
-we can use L{preprocess<calcium.preprocess>} to normalize the calcium traces and
-C{predict<calcium.predict>} to predict firing rates:
+we can use L{preprocess<c2s.preprocess>} to normalize the calcium traces and
+C{predict<c2s.predict>} to predict firing rates:
 
-	>>> data = calcium.preprocess(data)
-	>>> data = calcium.predict(data)
+	>>> data = c2s.preprocess(data)
+	>>> data = c2s.predict(data)
 
 The predictions for the i-th cell can be accessed via:
 
@@ -40,15 +40,15 @@ or, preferably, as spike times in milliseconds:
 	>>>	{'calcium': [[0., 0., 0., 0., 0.]], 'spike_times': [[24.2, 28.4 32.7, 40.2]], 'fps': 12.1}]
 
 The preprocessing function will automatically compute the other format of the spike trains if one
-of them is given. Using the method L{train<calcium.train>}, we can train a model to predict spikes from
+of them is given. Using the method L{train<c2s.train>}, we can train a model to predict spikes from
 fluorescence traces
 
-	>>> data = calcium.preprocess(data)
-	>>> results = calcium.train(data)
+	>>> data = c2s.preprocess(data)
+	>>> results = c2s.train(data)
 
 and then use it to make predictions:
 
-	>>> data = calcium.predict(data, results)
+	>>> data = c2s.predict(data, results)
 
 It is important that the data used for training undergoes the same preprocessing as the data
 used when making predictions.
@@ -220,7 +220,7 @@ def train(data,
 		>>> results['input_mask']
 		>>> results['output_mask']
 
-	@see: L{predict<calcium.predict>}
+	@see: L{predict<c2s.predict>}
 
 	@type  data: list
 	@param data: list of dictionaries containig calcium/fluorescence traces
@@ -456,7 +456,7 @@ def evaluate(data, method='corr', **kwargs):
 	or area under the ROC curve.
 
 	@type  data: list
-	@param data: list of dictionaries as produced by L{predict<calcium.predict>}
+	@param data: list of dictionaries as produced by L{predict<c2s.predict>}
 
 	@type  method: string
 	@param method: either 'loglik', 'info', 'corr', or 'auc' (default: 'corr')

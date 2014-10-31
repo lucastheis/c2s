@@ -8,21 +8,16 @@ using all but one cell for training and the remaining cell for testing.
 import os
 import sys
 
-sys.path.append('./code')
-
 from argparse import ArgumentParser
 from pickle import load
 from numpy import mean, std, corrcoef, sqrt, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from calcium import train, predict, preprocess
-from tools import Experiment
+from c2s import train, predict, preprocess
+from c2s.experiment import Experiment
 
 def main(argv):
-	experiment = Experiment()
-
 	parser = ArgumentParser(argv[0], description=__doc__)
-
 	parser.add_argument('--dataset',        '-d', type=str,   required=True)
 	parser.add_argument('--num_components', '-c', type=int,   default=3)
 	parser.add_argument('--num_features',   '-f', type=int,   default=2)
@@ -37,6 +32,8 @@ def main(argv):
 	parser.add_argument('--output',         '-o', type=str,   default='results/')
 
 	args, _ = parser.parse_known_args(argv[1:])
+
+	experiment = Experiment()
 
 	with open(args.dataset) as handle:
 		data = load(handle)
