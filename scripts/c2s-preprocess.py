@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Preprocess data.
+Remove trends and normalize sampling rate.
 """
 
 import sys
@@ -16,7 +16,8 @@ def main(argv):
 	parser.add_argument('--input',     '-i', type=str,   required=True)
 	parser.add_argument('--output',    '-o', type=str,   required=True)
 	parser.add_argument('--filter',    '-s', type=int,   default=0)
-	parser.add_argument('--fps',       '-f', type=float, default=100.)
+	parser.add_argument('--fps',       '-f', type=float, default=100.,
+		help='Up- or downsample data to match this sampling rate.' )
 	parser.add_argument('--matlab',    '-m', type=str,   default='')
 	parser.add_argument('--verbosity', '-v', type=int,   default=1)
 

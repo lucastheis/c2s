@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This code needs to be rewritten.
+Predict firing rates from calcium traces.
 """
 
 import sys
@@ -14,7 +14,7 @@ from c2s.experiment import Experiment
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('--dataset',    '-d', type=str, required=True)
+	parser.add_argument('dataset',            type=str)
 	parser.add_argument('--models',     '-m', type=str, default='')
 	parser.add_argument('--preprocess', '-p', type=int, default=0)
 	parser.add_argument('--verbosity',  '-v', type=int, default=1)

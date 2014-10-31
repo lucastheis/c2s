@@ -11,9 +11,7 @@ Examples:
 import os
 import sys
 
-sys.path.append('./code')
-
-from argparse import ArgumentParser
+from argparse import ArgumentParser, HelpFormatter
 from pickle import load
 from numpy import mean, corrcoef
 from numpy.random import rand, randint
@@ -22,29 +20,30 @@ from c2s import train, predict, preprocess
 from c2s.experiment import Experiment
 
 def main(argv):
-	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('--dataset',        '-d', type=str,   required=True, nargs='+',
+	parser = ArgumentParser(argv[0], description=__doc__,
+		formatter_class=lambda prog: HelpFormatter(prog, max_help_position=10, width=120))
+	parser.add_argument('dataset',                type=str, nargs='+',
 		help='Dataset(s) used for training.')
 	parser.add_argument('--num_components', '-c', type=int,   default=3,
-		help='Number of components used in STM model (default: 3).')
+		help='Number of components used in STM model (default: %(default)d).')
 	parser.add_argument('--num_features',   '-f', type=int,   default=2,
-		help='Number of quadratic features used in STM model (default: 2).')
+		help='Number of quadratic features used in STM model (default: %(default)d).')
 	parser.add_argument('--num_models',     '-m', type=int,   default=4,
-		help='Number of models trained (predictions will be averaged across models, default: 4).')
+		help='Number of models trained (predictions will be averaged across models, default: %(default)d).')
 	parser.add_argument('--keep_all',       '-k', type=int,   default=1,
-		help='If set to 0, only the best model of all trained models is kept (default: 1).')
+		help='If set to 0, only the best model of all trained models is kept (default: %(default)d).')
 	parser.add_argument('--finetune',       '-n', type=int,   default=0,
-		help='If set to 1, enables another finetuning step which is performed after training (default: 0).')
+		help='If set to 1, enables another finetuning step which is performed after training (default: %(default)d).')
 	parser.add_argument('--num_train',      '-t', type=int,   default=0,
 		help='If specified, a (random) subset of cells is used for training.')
 	parser.add_argument('--num_valid',      '-s', type=int,   default=0,
 		help='If specified, a (random) subset of cells will be used for early stopping based on validation error.')
 	parser.add_argument('--var_explained',  '-e', type=float, default=95.,
-		help='Controls the degree of dimensionality reduction of fluorescence windows (default: 95).')
+		help='Controls the degree of dimensionality reduction of fluorescence windows (default: %(default).0f).')
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.,
-		help='Length of windows extracted from calcium signal for prediction (in milliseconds, default: 1000).')
+		help='Length of windows extracted from calcium signal for prediction (in milliseconds, default: %(default).0f).')
 	parser.add_argument('--regularize',     '-r', type=float, default=0.,
-		help='Amount of parameter regularization (filters are regularized for smoothness, default: 0.).')
+		help='Amount of parameter regularization (filters are regularized for smoothness, default: %(default).1f).')
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0,
 		help='If the data is not already preprocessed, this can be used to do it.')
 	parser.add_argument('--output',         '-o', type=str,   default='results/',
@@ -55,11 +54,7 @@ def main(argv):
 
 	experiment = Experiment()
 
-	print os.path.isdir(args.output)
-	print os.path.join(args.output, 'train.{0}.{1}.xpck')
-	return 0
-
-	if not args.dataset:
+	if not args.datasets:
 		print 'You have to specify at least 1 dataset.'
 		return 0
 

@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-
-sys.path.append('./code')
-
 from setuptools import setup
 from c2s import __version__
 
@@ -13,11 +9,18 @@ setup(
 	author='Lucas Theis',
 	author_email='lucas@theis.io',
 	description='A toolbox for inferring spikes from two-photon imaging calcium traces.',
-	url='https://github.com/lucastheis/calcium/',
+	url='https://github.com/lucastheis/c2s/',
 	packages=['c2s'],
-	scripts=[],
+	scripts=[
+		'scripts/c2s',
+		'scripts/c2s-preprocess.py',
+		'scripts/c2s-predict.py',
+		'scripts/c2s-train.py',
+		'scripts/c2s-evaluate.py',
+		'scripts/c2s-leave-one-out.py'],
 	install_requires=('cmt>=1.5.0'),
 	license='MIT',
+	zip_safe=False,
 	classifiers=(
 		'Development Status :: 2 - Pre-Alpha',
 		'Intended Audience :: Science/Research',
