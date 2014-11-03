@@ -99,7 +99,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 		2. Normalize the range of the calcium trace by the 5th and 80th percentile.
 		3. Change the sampling rate of the calcium trace and spike train.
 
-	If `filter` is set, the first step is replaced by estimating and removing a baseline using
+	If C{filter} is set, the first step is replaced by estimating and removing a baseline using
 	a percentile filter (40 seconds seems like a good value for the percentile filter).
 
 	@type  data: list

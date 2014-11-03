@@ -38,11 +38,14 @@ address,caption,cite,code,dfn,em,th,var {
     font-style: normal;
     font-weight: normal;
 }
-li {
+ul li {
     list-style: none;
 }
 ul {
 	margin: 0px 20px 20px;
+}
+ol {
+	margin: 0px 0px 0px 60px;
 }
 caption,th {
     text-align: left;
