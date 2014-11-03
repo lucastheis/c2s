@@ -19,12 +19,10 @@ from c2s import preprocess, load_data
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('input',             type=str)
-	parser.add_argument('output',            type=str)
+	parser.add_argument('output',            type=str, nargs='+')
 	parser.add_argument('--filter',    '-s', type=int,   default=0)
 	parser.add_argument('--fps',       '-f', type=float, default=100.,
 		help='Up- or downsample data to match this sampling rate.' )
-	parser.add_argument('--type',      '-t', type=str,   choices=['pck', 'mat', 'both'], default='pck',
-		help='Whether to save output in pickle format, MATLAB format, or both.')
 	parser.add_argument('--verbosity', '-v', type=int,   default=1)
 
 	args = parser.parse_args(argv[1:])
@@ -39,19 +37,13 @@ def main(argv):
 		filter=args.filter if args.filter > 0 else None,
 		verbosity=args.verbosity)
 
-	output_file = args.output
-
-	if output_file.endswith('.pck') or output_file.endswith('.mat'):
-		# remove file ending
-		output_file = '.'.join(output_file.split('.')[:-1])
-
-	if args.type in ['pck', 'both']:
-		with open(output_file + '.pck', 'w') as handle:
-			dump(data, handle)
-
-	if args.type in ['mat', 'both']:
-		# store in MATLAB format
-		savemat(output_file + '.mat', {'data': data})
+	for filepath in args.output:
+		if filepath.lower().endswith('.mat'):
+			# store in MATLAB format
+			savemat(output_file + '.mat', {'data': data})
+		else:
+			with open(output_file + '.pck', 'w') as handle:
+				dump(data, handle, protocol=2)
 
 	return 0
 

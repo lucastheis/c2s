@@ -22,13 +22,11 @@ from c2s.experiment import Experiment
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('dataset',            type=str)
-	parser.add_argument('output',             type=str)
+	parser.add_argument('output',             type=str, nargs='+')
 	parser.add_argument('--models',     '-m', type=str, default='')
 	parser.add_argument('--preprocess', '-p', type=int, default=0,
 		help='If you haven\'t already applied `preprocess` to the data, set to 1 (default: 0).')
 	parser.add_argument('--verbosity',  '-v', type=int, default=1)
-	parser.add_argument('--type',       '-t', type=str, choices=['xpck', 'pck', 'mat', 'both'], default='xpck',
-		help='Whether to save output in x-pickle format, MATLAB format, or both.')
 
 	args = parser.parse_args(argv[1:])
 
@@ -53,25 +51,20 @@ def main(argv):
 
 	# remove data besides predictions
 	for entry in data:
-		del entry['calcium']
 		if 'spikes' in entry:
 			del entry['spikes']
 		if 'spike_times' in entry:
 			del entry['spike_times']
+		del entry['calcium']
 
-	output_file = args.output
+	for filepath in args.output:
+		if filepath.lower().endswith('.mat'):
+			# store in MATLAB format
+			savemat(output_file + '.mat', {'data': data})
+		else:
+			with open(output_file + '.pck', 'w') as handle:
+				dump(data, handle, protocol=2)
 
-	if output_file.endswith('.xpck') or output_file.endswith('.mat') or output_file.endswith('.pck'):
-		# remove file ending
-		output_file = '.'.join(output_file.split('.')[:-1])
-
-	if args.type in ['xpck', 'both']:
-		with open(output_file + '.xpck', 'w') as handle:
-			dump(data, handle)
-
-	if args.type in ['mat', 'both']:
-		# store in MATLAB format
-		savemat(output_file + '.mat', {'data': data})
 
 	return 0
 

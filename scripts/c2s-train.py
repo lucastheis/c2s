@@ -25,6 +25,8 @@ def main(argv):
 		formatter_class=lambda prog: HelpFormatter(prog, max_help_position=10, width=120))
 	parser.add_argument('dataset',                type=str, nargs='+',
 		help='Dataset(s) used for training.')
+	parser.add_argument('output',                 type=str,
+		help='Directory or file where trained models will be stored.')
 	parser.add_argument('--num_components', '-c', type=int,   default=3,
 		help='Number of components used in STM model (default: %(default)d).')
 	parser.add_argument('--num_features',   '-f', type=int,   default=2,
@@ -47,8 +49,6 @@ def main(argv):
 		help='Amount of parameter regularization (filters are regularized for smoothness, default: %(default).1f).')
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0,
 		help='If the data is not already preprocessed, this can be used to do it.')
-	parser.add_argument('--output',         '-o', type=str,   default='results/',
-		help='Directory or file where trained models will be stored.')
 	parser.add_argument('--verbosity',      '-v', type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
@@ -92,8 +92,8 @@ def main(argv):
 	experiment['training_cells'] = training_cells
 	experiment['models'] = models
 
-	if os.path.isdir(args.output) or args.output == 'results/':
-		experiment.save(os.path.join(args.output, 'train.{0}.{1}.xpck'))
+	if os.path.isdir(args.output):
+		experiment.save(os.path.join(args.output, 'model.xpck'))
 	else:
 		experiment.save(args.output)
 
