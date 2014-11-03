@@ -18,7 +18,7 @@ setup(
 		'scripts/c2s-train.py',
 		'scripts/c2s-evaluate.py',
 		'scripts/c2s-leave-one-out.py'],
-	install_requires=('cmt>=1.5.0'),
+	install_requires=(),
 	license='MIT',
 	zip_safe=False,
 	classifiers=(
