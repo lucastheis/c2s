@@ -69,7 +69,7 @@ __version__ = '0.1.0dev'
 
 from copy import copy, deepcopy
 from base64 import b64decode
-from pickle import loads
+from pickle import load, loads
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
 from numpy import corrcoef, array, eye, dot, empty_like
@@ -79,6 +79,7 @@ from scipy.stats import poisson
 from scipy.stats.mstats import gmean
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
+from scipy.io import loadmat
 from cmt.models import MCGSM, STM, Poisson
 from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
 from cmt.tools import generate_data_from_image, extract_windows
@@ -89,6 +90,45 @@ try:
 	from roc import roc
 except:
 	pass
+
+def load_data(filepath):
+	"""
+	Loads data in either pickle or MATLAB format.
+
+	@type  filepath: string
+	@param filepath: path to dataset
+
+	@rtype: list
+	@return: list of dictionaries containing the data
+	"""
+
+	if filepath.lower().endswith('.mat'):
+		data = []
+		data_mat = loadmat(filepath)
+		data_mat = data_mat['data'].ravel()
+
+		for entry_mat in data_mat:
+			entry = {}
+
+			for key in entry_mat.dtype.names:
+				entry[key] = entry_mat[key][0, 0]
+
+			for key in ['calcium', 'spikes', 'spike_times']:
+				if key in entry:
+					entry[key] = entry[key].reshape(1, entry[key].size)
+			if 'fps' in entry:
+				entry['fps'] = float(entry['fps'])
+			if 'cell_num' in entry:
+				entry['cell_num'] = int(entry['cell_num'])
+
+			data.append(entry)
+
+		return data
+
+	with open(filepath) as handle:
+		return load(handle)
+
+
 
 def preprocess(data, fps=100., filter=None, verbosity=0):
 	"""

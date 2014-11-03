@@ -1,3 +1,3 @@
-__all__ = ['preprocess', 'train', 'evaluate', 'predict']
+__all__ = ['load_data', 'preprocess', 'train', 'evaluate', 'predict']
 from c2s import __version__
-from c2s import preprocess, train, predict, evaluate
+from c2s import load_data, preprocess, train, predict, evaluate

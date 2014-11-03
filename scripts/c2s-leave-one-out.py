@@ -9,11 +9,10 @@ import os
 import sys
 
 from argparse import ArgumentParser
-from pickle import load
 from numpy import mean, std, corrcoef, sqrt, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from c2s import train, predict, preprocess
+from c2s import load_data, train, predict, preprocess
 from c2s.experiment import Experiment
 
 def main(argv):
@@ -37,8 +36,7 @@ def main(argv):
 
 	data = []
 	for dataset in args.dataset:
-		with open(dataset) as handle:
-			data = data + load(handle)
+		data = data + load_data(dataset)
 
 	if args.preprocess:
 		data = preprocess(data)

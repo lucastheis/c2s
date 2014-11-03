@@ -5,7 +5,8 @@ Trains STMs for the prediction of spikes from calcium traces.
 
 Examples:
 
-	c2s train -d data.pck
+	c2s train -p 1 data.pck
+	c2s train -o model.xpck data.preprocessed.pck
 """
 
 import os
