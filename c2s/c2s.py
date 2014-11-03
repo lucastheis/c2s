@@ -52,6 +52,14 @@ and then use it to make predictions:
 
 It is important that the data used for training undergoes the same preprocessing as the data
 used when making predictions.
+
+@undocumented: optimize_predictions
+@undocumented: robust_linear_regression
+@undocumented: percentile_filter
+@undocumented: downsample
+@undocumented: responses
+@undocumented: generate_inputs_and_outputs
+@undocumented: DEFAULT_MODEL
 """
 
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
