@@ -7,7 +7,7 @@ To predict spikes from calcium traces we are going to run commands like the foll
 
     $ c2s predict data.mat predictions.mat
 
-The following tutorial describes how to format and preprocess your data, and how to improve and
+This tutorial describes how to format and preprocess your data, and how to improve and
 evaluate predictions.
 
 Data formatting
