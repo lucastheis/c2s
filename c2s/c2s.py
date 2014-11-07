@@ -67,6 +67,7 @@ __author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
 __version__ = '0.1.0dev'
 
+import sys
 from copy import copy, deepcopy
 from base64 import b64decode
 from pickle import load, loads
@@ -578,8 +579,12 @@ def evaluate(data, method='corr', **kwargs):
 				mask = spikes > .5
 			pos = hstack(pos)
 
-			# compute area under curve
-			auc.append(roc(pos, neg)[0])
+			try:
+				# compute area under curve
+				auc.append(roc(pos, neg)[0])
+			except NameError:
+				print 'You need to compile `roc.pyx` with cython first.'
+				sys.exit(1)
 
 		return array(auc)
 
@@ -598,6 +603,8 @@ def evaluate(data, method='corr', **kwargs):
 				kwargs['verbosity'])
 		else:
 			f = lambda x: x
+			f.x = [min(hstack(predictions)), max(hstack(predictions))]
+			f.y = f.x
 
 		# for conversion into bit/s
 		factor = 1. / kwargs['downsampling'] / log(2.)

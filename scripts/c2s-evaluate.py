@@ -2,71 +2,59 @@
 
 """
 Evaluates firing rate predictions in terms of correlations or Poisson likelihoods.
+
+Examples:
+
+	c2s evaluate data.preprocessed.pck predictions.pck
 """
 
 import os
 import sys
 
 from argparse import ArgumentParser
-from scipy.io import loadmat
+from scipy.io import savemat
 from pickle import load
-from numpy import mean, min, hstack
-from c2s import evaluate
+from numpy import mean, min, hstack, asarray
+from c2s import evaluate, load_data
 from c2s.experiment import Experiment
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('--results',      '-r', type=str, default='')
-	parser.add_argument('--dataset',      '-d', type=str, default='')
+	parser.add_argument('dataset',              type=str)
+	parser.add_argument('predictions',          type=str, default='')
 	parser.add_argument('--downsampling', '-s', type=int, default=[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50], nargs='+')
 	parser.add_argument('--optimize',     '-z', type=int, default=1)
-	parser.add_argument('--verbosity',    '-v', type=int, default=2)
-	parser.add_argument('--method',       '-m', type=str, default='loglik')
-	parser.add_argument('--output',       '-o', type=str, default='results/')
+	parser.add_argument('--method',       '-m', type=str, default='corr', choices=['corr', 'auc', 'info'])
+	parser.add_argument('--output',       '-o', type=str, default='')
+	parser.add_argument('--verbosity',    '-v', type=int, default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
 
 	experiment = Experiment()
 
-	if args.results == '':
+	data = load_data(args.dataset)
+
+	if args.predictions == '':
 		# use raw calcium signal for prediction
-		with open(args.dataset) as handle:
-			data = load(handle)
-
 		calcium_min = min(hstack(entry['calcium'] for entry in data))
-
 		for entry in data:
 			entry['predictions'] = entry['calcium'] - calcium_min + 1e-5
 
 	else:
-		if args.results.endswith('.mat'):
-			# results are stored in MATLAB file
-			results = {'predictions': loadmat(args.results)['predictions'].ravel()}
+		predictions = load_data(args.predictions)
 
-			if args.dataset:
-				try:
-					with open(args.dataset) as handle:
-						data = load(handle)
-				except IOError as err:
-					print 'Could not open dataset.'
-			else:
-				print 'Please specify which dataset corresponds to these predictions.'
-		else:
-			# results are stored in pickled experiment
-			results = Experiment(args.results)
+		try:
+			if len(predictions) != len(data):
+				raise ValueError()
 
-			try:
-				if args.dataset:
-					with open(args.dataset) as handle:
-						data = load(handle)
-				else:
-					with open(results['args'].dataset) as handle:
-						data = load(handle)
-			except IOError as err:
-				print 'Could not open dataset.'
+			for entry1, entry2 in zip(data, predictions):
+				if entry1['calcium'].size != entry2['predictions'].size:
+					raise ValueError()
+				entry1['predictions'] = entry2['predictions']
 
-		for k, entry in enumerate(data):
-			entry['predictions'] = results['predictions'][k]
+		except ValueError:
+			print 'These predictions seem to be for a different dataset.'
+			return 1
 
 	fps = []
 	loglik = []
@@ -75,13 +63,21 @@ def main(argv):
 	entropy = []
 	functions = []
 
-	# compute likelihood
+
 	for ds in args.downsampling:
+		if args.verbosity > 0:
+			if args.method.lower().startswith('c'):
+				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'Correlation')
+			elif args.method.lower().startswith('a'):
+				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'AUC')
+			else:
+				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'Information gain')
+
 		fps.append([])
 		for entry in data:
 			fps[-1].append(entry['fps'] / ds)
 
-		if args.method.startswith('c'):
+		if args.method.lower().startswith('c'):
 			# compute correlations
 			R = evaluate(data, method=args.method,
 				optimize=args.optimize,
@@ -90,14 +86,15 @@ def main(argv):
 
 			correlations.append(R)
 
-			for r in R:
-				print '{0:.3f}'.format(r)
+			if args.verbosity > 0:
+				for k, r in enumerate(R):
+					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], r)
 
-			print '------'
-			print '{0:.3f}'.format(mean(R))
-			print
+				print '-------------------------'
+				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(R))
+				print
 
-		elif args.method.startswith('a'):
+		elif args.method.lower().startswith('a'):
 			# compute correlations
 			A = evaluate(data, method=args.method,
 				optimize=args.optimize,
@@ -106,16 +103,17 @@ def main(argv):
 
 			auc.append(A)
 
-			for a in A:
-				print '{0:.3f}'.format(a)
+			if args.verbosity > 0:
+				for k, a in enumerate(A):
+					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], a)
 
-			print '------'
-			print '{0:.3f}'.format(mean(A))
-			print
+				print '-------------------------'
+				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(A))
+				print
 
 		else:
 			# compute log-likelihoods
-			L, H, f = evaluate(data, method=args.method,
+			L, H, f = evaluate(data, method='loglik',
 				optimize=args.optimize,
 				downsampling=ds,
 				verbosity=args.verbosity,
@@ -126,34 +124,47 @@ def main(argv):
 			entropy.append(H)
 			functions.append((f.x, f.y))
 
-			print
-			for I in (H + L):
-				print '{0:.3f} [bit/s]'.format(I)
-			print '------'
-			print '{0:.3f} [bit/s]'.format(mean(H + L))
-			print
+			if args.verbosity > 0:
+				for k, I in enumerate(H + L):
+					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], I)
 
-	if os.path.isdir(args.output):
-		if args.results.endswith('.xpck'):
-			filepath = args.results[:-4] + args.method + '.xpck'
+				print '-------------------------'
+				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(H + L))
+				print
+
+	if args.output.lower().endswith('.mat'):
+
+		if args.method.lower().startswith('c'):
+			savemat(args.output, {'fps': asarray(fps), 'correlations': asarray(correlations)})
+		elif args.method.lower().startswith('a'):
+			savemat(args.output, {'fps': asarray(fps), 'auc': asarray(auc)})
 		else:
+			savemat(args.output, {
+				'fps': asarray(fps),
+				'loglik': asarray(loglik),
+				'entropy': asarray(entropy),
+				'info': asarray(loglik) + asarray(entropy)})
+
+	elif args.output:
+		if os.path.isdir(args.output):
 			filepath = os.path.join(args.output, args.method + '.{0}.{1}.xpck')
-	else:
-		filepath = args.output
+		else:
+			filepath = args.output
 
-	experiment['args'] = args
-	experiment['fps'] = fps
+		experiment['args'] = args
+		experiment['fps'] = asarray(fps)
 
-	if args.method.startswith('c'):
-		experiment['correlations'] = correlations
-	elif args.method.startswith('a'):
-		experiment['auc'] = auc
-	else:
-		experiment['loglik'] = loglik
-		experiment['entropy'] = entropy
-		experiment['f'] = functions
+		if args.method.lower().startswith('c'):
+			experiment['correlations'] = asarray(correlations)
+		elif args.method.lower().startswith('a'):
+			experiment['auc'] = asarray(auc)
+		else:
+			experiment['loglik'] = asarray(loglik)
+			experiment['entropy'] = asarray(entropy)
+			experiment['info'] = asarray(loglik) + asarray(entropy)
+			experiment['f'] = functions
 
-	experiment.save(filepath, overwrite=True)
+		experiment.save(filepath, overwrite=True)
 
 	return 0
 

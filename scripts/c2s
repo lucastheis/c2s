@@ -20,6 +20,9 @@ def main(argv):
 	subparser = subparsers.add_parser('train',
 		help='Train a model with calcium traces and simultaneously recorded spikes.')
 	subparser.add_argument('--command', default='train')
+	subparser = subparsers.add_parser('evaluate',
+		help='Evaluate predictins in terms of correlations or Poisson log-likelihood.')
+	subparser.add_argument('--command', default='evaluate')
 
 	args = parser.parse_args(argv[1:2])
 

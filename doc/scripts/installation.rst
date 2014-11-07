@@ -9,8 +9,10 @@ command line:
 
 .. code-block:: bash
 
-    $ pip install git+https://github.com/lucastheis/cmt.git
+    $ pip install cython
+    $ pip install git+https://github.com/lucastheis/c2s.git
 
+The first line (installing `Cython <http://cython.org>`_) is optional but will enable more options for the evaluation of spike trains.
 After installation, the following command should be available and output some help:
 
 .. code-block:: bash

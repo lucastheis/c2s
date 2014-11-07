@@ -65,7 +65,6 @@ def main(argv):
 			with open(output_file + '.pck', 'w') as handle:
 				dump(data, handle, protocol=2)
 
-
 	return 0
 
 

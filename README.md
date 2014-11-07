@@ -24,6 +24,7 @@ If you are a developer and want to use `c2s` in your own Python code, please see
 * [cmt](https://github.com/lucastheis/cmt/) >= 0.5.0
 * NumPy >= 1.6.1
 * SciPy >= 0.13.0
+* Cython >= 0.20.0 (optional)
 
 ## Installation
 

@@ -2,6 +2,10 @@
 
 from setuptools import setup
 from c2s import __version__
+try:
+	from Cython.Build import cythonize
+except:
+	cythonize = lambda _: []
 
 setup(
 	name='c2s',
@@ -27,4 +31,5 @@ setup(
 		'License :: OSI Approved :: MIT License',
 		'Operating System :: OS Independent',
 		'Programming Language :: Python'),
+	ext_modules=cythonize("c2s/roc.pyx"),
 )

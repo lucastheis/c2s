@@ -168,5 +168,68 @@ To print a list of available parameters to influence the training, see
 Evaluation
 ----------
 
+Different metrics have been used to evaluate how well firing rate predictions agree with observed
+spike trains. c2s offers estimates of the `mutual information <http://en.wikipedia.org/wiki/Mutual_information>`_,
+`correlation <http://en.wikipedia.org/wiki/Pearson_product-moment_correlation_coefficient>`_, and
+`area uner the ROC curve <http://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve>`_ (AUC).
+These can be calculated with calls like the following:
+
+.. code-block:: bash
+
+    $ c2s evaluate -m corr data.preprocessed.mat predictions.mat
+    $ c2s evaluate -m info data.preprocessed.mat predictions.pck
+    $ c2s evaluate -m auc  data.preprocessed.pck predictions.pck
+
+.. note::
+
+    For the evaluation of AUC to work, `Cython <http://cython.org>`_ has to have been `installed <installation.html>`_ before installing c2s.
+
+The mutual information interprets the prediction as Poisson firing rates and is the most stringent of
+the three. For prediction :math:`\lambda_t` and observed spike counts :math:`k_t`, it is given by
+
+.. math::
+
+    I = \frac{1}{T} \sum_t k_t \log_2 \frac{\lambda_t}{\bar k} + \bar k - \bar \lambda,
+
+where :math:`\bar k` is the average over all :math:`k_t` and :math:`\bar \lambda` is the average
+over all :math:`\lambda_t`.
+While correlation is invariant under affine transformations, i.e., multiplying the
+predictions by a factor or adding a constant to them does not change the performance,
+mutual information depends on the absolute predictions. On the other end of the spectrum, AUC is
+invariant under arbitrary strictly monotone functions, i.e., even tranforming the predictions in a
+nonlinear way will not change the performance. However, many methods developed for spike
+reconstruction from calcium images have not been developed with mutual information in mind. This is
+why by default all predictions are nonlinearly transformed by an optimal piecewise linear
+monotonically increasing function. I.e., the information is calculated using
+:math:`\lambda_t' = f(\lambda_t)` rather than :math:`\lambda_t`. This optimization can be disabled
+as follows:
+
+.. code-block:: bash
+
+    $ c2s evaluate -z 0 -m info data.preprocessed.pck predictions.pck
+
+Since the evaluation is generally sensitive to the sampling at which the performance measure is
+calculated, the performance is calculated at various sampling rates which can be controlled via the
+``-s`` flag. For example, the call
+
+.. code-block:: bash
+
+    $ c2s evaluate -s 1 5 10 -m corr data.preprocessed.pck predictions.pck
+
+will downsample the signals by the factors 1, 5, and 10 before performing an evaluation.
+I.e., if the given spike trains are sampled at 100 Hz, the evaluation will be performed at 100 Hz, 20 Hz, and 10 Hz.
+Finally, the results can be saved into MATLAB or pickled Python files via:
+
+.. code-block:: bash
+
+    $ c2s evaluate -o correlation.mat  -m corr data.preprocessed.pck predictions.pck
+    $ c2s evaluate -o correlation.xpck -m corr data.preprocessed.pck predictions.pck
+
+.. note::
+
+    Using the same data for training a model and evaluating the model performance will lead to
+    overly optimistic performance estimates. To avoid bias, use independent datasets for
+    training and evaluation or use *leave-one-out cross-validation* for generating predictions.
+
 Leave-one-out cross-validation
 ------------------------------
