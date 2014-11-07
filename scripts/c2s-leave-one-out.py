@@ -9,6 +9,8 @@ import os
 import sys
 
 from argparse import ArgumentParser
+from pickle import dump
+from scipy.io import savemat
 from numpy import mean, std, corrcoef, sqrt, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
@@ -17,7 +19,8 @@ from c2s.experiment import Experiment
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('dataset',                type=str)
+	parser.add_argument('dataset',                type=str,   nargs='+')
+	parser.add_argument('output',                 type=str)
 	parser.add_argument('--num_components', '-c', type=int,   default=3)
 	parser.add_argument('--num_features',   '-f', type=int,   default=2)
 	parser.add_argument('--num_models',     '-m', type=int,   default=4)
@@ -28,16 +31,18 @@ def main(argv):
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
 	parser.add_argument('--regularize',     '-r', type=float, default=0.)
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0)
-	parser.add_argument('--output',         '-o', type=str,   default='results/')
+	parser.add_argument('--verbosity',      '-v', type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
 
 	experiment = Experiment()
 
+	# load data
 	data = []
 	for dataset in args.dataset:
 		data = data + load_data(dataset)
 
+	# preprocess data
 	if args.preprocess:
 		data = preprocess(data)
 
@@ -58,7 +63,8 @@ def main(argv):
 		data_train = [entry for entry in data if entry['cell_num'] != i]
 		data_test = [entry for entry in data if entry['cell_num'] == i]
 
-		print 'Test cell: {0}'.format(i)
+		if args.verbosity > 0:
+			print 'Test cell: {0}'.format(i)
 
 		# train on all cells but cell i
 		results = train(
@@ -77,16 +83,34 @@ def main(argv):
 			regularize=args.regularize,
 			verbosity=1)
 
+		if args.verbosity > 0:
+			print 'Predicting...'
+
 		# predict responses of cell i
-		predict(data_test, results, verbosity=1)
+		predictions = predict(data_test, results, verbosity=0)
 
-	experiment['args'] = args
-	experiment['predictions'] = [entry['predictions'] for entry in data]
+		for entry1, entry2 in zip(data_test, predictions):
+			entry1['predictions'] = entry2['predictions']
 
-	if os.path.isdir(args.output):
-		experiment.save(os.path.join(args.output, 'leave_one_out.{0}.{1}.xpck'))
-	else:
+	# remove data except predictions
+	for entry in data:
+		if 'spikes' in entry:
+			del entry['spikes']
+		if 'spike_times' in entry:
+			del entry['spike_times']
+		del entry['calcium']
+
+	if args.output.lower().endswith('.mat'):
+		savemat(args.output, {'data': data})
+
+	elif args.output.lower().endswith('.xpck'):
+		experiment['args'] = args
+		experiment['data'] = data
 		experiment.save(args.output)
+
+	else:
+		with open(args.output, 'w') as handle:
+			dump(data, handle, protocol=2)
 
 	return 0
 

@@ -22,7 +22,7 @@ def main(argv):
 	parser.add_argument('output',            type=str, nargs='+')
 	parser.add_argument('--filter',    '-s', type=int,   default=0)
 	parser.add_argument('--fps',       '-f', type=float, default=100.,
-		help='Up- or downsample data to match this sampling rate.' )
+		help='Up- or downsample data to match this sampling rate (100 fps).' )
 	parser.add_argument('--verbosity', '-v', type=int,   default=1)
 
 	args = parser.parse_args(argv[1:])

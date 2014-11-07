@@ -23,6 +23,9 @@ def main(argv):
 	subparser = subparsers.add_parser('evaluate',
 		help='Evaluate predictins in terms of correlations or Poisson log-likelihood.')
 	subparser.add_argument('--command', default='evaluate')
+	subparser = subparsers.add_parser('leave-one-out',
+		help='Predict firing rates of each cell by training on all other cells.')
+	subparser.add_argument('--command', default='leave-one-out')
 
 	args = parser.parse_args(argv[1:2])
 

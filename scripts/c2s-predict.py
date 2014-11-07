@@ -23,7 +23,7 @@ def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('dataset',            type=str)
 	parser.add_argument('output',             type=str, nargs='+')
-	parser.add_argument('--models',     '-m', type=str, default='')
+	parser.add_argument('--model',      '-m', type=str, default='')
 	parser.add_argument('--preprocess', '-p', type=int, default=0,
 		help='If you haven\'t already applied `preprocess` to the data, set to 1 (default: 0).')
 	parser.add_argument('--verbosity',  '-v', type=int, default=1)
@@ -39,9 +39,9 @@ def main(argv):
 		# preprocess data
 		data = preprocess(data, args.verbosity)
 
-	if args.models:
+	if args.model:
 		# load training results
-		results = Experiment(args.models)['models']
+		results = Experiment(args.model)['model']
 	else:
 		# use default model
 		results = None
@@ -49,7 +49,7 @@ def main(argv):
 	# predict firing rates
 	data = predict(data, results, verbosity=args.verbosity)
 
-	# remove data besides predictions
+	# remove data except predictions
 	for entry in data:
 		if 'spikes' in entry:
 			del entry['spikes']

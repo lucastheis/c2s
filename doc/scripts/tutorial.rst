@@ -61,7 +61,7 @@ In Python, data should be stored in lists of dictionaries and saved as `pickled 
 Each dictionary element should contain at least the entries ``calcium`` and ``fps``. Accessing the 12th
 entry of the list might present you with something like the following output:
 
->>> data[12]
+>>> print data[12]
 {'calcium': array([[ 0.391,  0.490, ...,  0.221,  0.307]]),
  'fps': 99.9998,
  'cell_num': 8,
@@ -75,7 +75,7 @@ trace. However, the preferred method is to specify the spikes times in milliseco
 ``spike_times``, since spikes are typically recorded at much higher sampling rates.
 In this case the output might look like:
 
->>> data[12]
+>>> print data[12]
 {'calcium': array([[ 0.391,  0.490, ...,  0.221,  0.307]]),
  'fps': 99.9998,
  'cell_num': 8,
@@ -147,19 +147,25 @@ used for prediction as follows:
 
 .. code-block:: bash
 
-    $ c2s predict --model model.xpck data.preprocessed.pck predictions.pck
+    $ c2s predict -m model.xpck data.preprocessed.pck predictions.pck
 
 
 Training a model
 ----------------
 
-To train a model to fit your needs, use the command
+To train a model to fit your needs, use the command:
 
 .. code-block:: bash
 
     $ c2s train data.preprocessed.pck model.xpck
 
-To print a list of available parameters to influence the training, see
+Multiple datasets can be combined as well:
+
+.. code-block:: bash
+
+    $ c2s train data1.pck data2.pck model.xpck
+
+To print a list of available parameters to influence the training, please see:
 
 .. code-block:: bash
 
@@ -185,7 +191,7 @@ These can be calculated with calls like the following:
     For the evaluation of AUC to work, `Cython <http://cython.org>`_ has to have been `installed <installation.html>`_ before installing c2s.
 
 The mutual information interprets the prediction as Poisson firing rates and is the most stringent of
-the three. For prediction :math:`\lambda_t` and observed spike counts :math:`k_t`, it is given by
+the three. For predictions :math:`\lambda_t` and observed spike counts :math:`k_t`, it is given by
 
 .. math::
 
@@ -209,15 +215,15 @@ as follows:
     $ c2s evaluate -z 0 -m info data.preprocessed.pck predictions.pck
 
 Since the evaluation is generally sensitive to the sampling at which the performance measure is
-calculated, the performance is calculated at various sampling rates which can be controlled via the
-``-s`` flag. For example, the call
+calculated, the performance is calculated at various sampling rates. For example,
 
 .. code-block:: bash
 
     $ c2s evaluate -s 1 5 10 -m corr data.preprocessed.pck predictions.pck
 
 will downsample the signals by the factors 1, 5, and 10 before performing an evaluation.
-I.e., if the given spike trains are sampled at 100 Hz, the evaluation will be performed at 100 Hz, 20 Hz, and 10 Hz.
+I.e., if the given spike trains and predictions are sampled at 100 Hz, the evaluation will be
+performed at 100 Hz, 20 Hz, and 10 Hz.
 Finally, the results can be saved into MATLAB or pickled Python files via:
 
 .. code-block:: bash
@@ -233,3 +239,23 @@ Finally, the results can be saved into MATLAB or pickled Python files via:
 
 Leave-one-out cross-validation
 ------------------------------
+
+Training and evaluating a model on the same dataset leads to biased performance results. On the other
+hand, naively splitting a dataset in two might leave us with too little data to properly train our
+model or evaluate it. Leave-one-out cross-validation maximizes the amount of
+available training data by using all but one cell for training and only the remaining cell for prediction and evaluation.
+By repeating this process – using a different cell for evaluation each time – we can nevertheless
+use the entire dataset in the evaluation.
+A call to
+
+.. code-block:: bash
+
+    $ c2s leave-one-out preprocessed.mat predictions.mat
+
+will generate predictions by training a model on :math:`N - 1` cells to predict the
+remaining cell. Since this means running the training process :math:`N` times for :math:`N` cells,
+this can take a while.
+
+.. note::
+    If recordings from a single cell are split across multiple sessions, you should use
+    ``cell_num`` to group sessions together.
