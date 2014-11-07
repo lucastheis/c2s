@@ -60,9 +60,9 @@ def main(argv):
 	for filepath in args.output:
 		if filepath.lower().endswith('.mat'):
 			# store in MATLAB format
-			savemat(output_file + '.mat', {'data': data})
+			savemat(filepath, {'data': data})
 		else:
-			with open(output_file + '.pck', 'w') as handle:
+			with open(filepath, 'w') as handle:
 				dump(data, handle, protocol=2)
 
 	return 0

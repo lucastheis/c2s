@@ -26,7 +26,7 @@ def main(argv):
 	parser.add_argument('--num_models',     '-m', type=int,   default=4)
 	parser.add_argument('--keep_all',       '-k', type=int,   default=1)
 	parser.add_argument('--finetune',       '-n', type=int,   default=0)
-	parser.add_argument('--num_valid',      '-v', type=int,   default=0)
+	parser.add_argument('--num_valid',      '-s', type=int,   default=0)
 	parser.add_argument('--var_explained',  '-e', type=float, default=95.)
 	parser.add_argument('--window_length',  '-w', type=float, default=1000.)
 	parser.add_argument('--regularize',     '-r', type=float, default=0.)
