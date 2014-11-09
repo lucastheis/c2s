@@ -1,6 +1,0 @@
-c2s.c2s	c2s.c2s-module.html
-c2s.c2s.predict	c2s.c2s-module.html#predict
-c2s.c2s.train	c2s.c2s-module.html#train
-c2s.c2s.__package__	c2s.c2s-module.html#__package__
-c2s.c2s.evaluate	c2s.c2s-module.html#evaluate
-c2s.c2s.preprocess	c2s.c2s-module.html#preprocess
