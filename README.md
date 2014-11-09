@@ -1,6 +1,14 @@
 # c2s
 
+![predictions](https://raw.githubusercontent.com/lucastheis/c2s/media/predictions.png)
+
 Tools for the prediction of spike trains from calcium traces.
+
+## Documentation
+
+If you are a neuroscientist and want to reconstruct spikes from fluorescence/calcium traces or
+similar signals, please see the main [__documentation__](http://c2s.readthedocs.org/en/latest/).
+If you are a developer and want to use `c2s` in your own Python code, please see the [__API documentation__](http://lucastheis.github.io/c2s/).
 
 ## Example
 
@@ -10,13 +18,6 @@ Once installed, predicting spikes can be as easy as
 
 This package comes with a default model for predicting spikes from calcium traces, but also comes
 with tools for training and evaluating your own model.
-
-## Documentation
-
-If you are a neuroscientist and want to reconstruct spikes from fluorescence/calcium traces or
-similar signals, please see the main [__documentation__](http://c2s.readthedocs.org/en/latest/).
-If you are a developer and want to use `c2s` in your own Python code, please see the [__API documentation__](http://lucastheis.github.io/c2s/).
-
 
 ## Requirements
 
@@ -28,9 +29,12 @@ If you are a developer and want to use `c2s` in your own Python code, please see
 
 ## Installation
 
-First make sure that you have the [Conditional Modeling Toolkit](https://github.com/lucastheis/cmt/) installed. Then run:
+First install the [Conditional Modeling Toolkit](https://github.com/lucastheis/cmt/). Then run:
 
-	pip install git+https://github.com/lucastheis/c2s.git
+	$ pip install git+https://github.com/lucastheis/c2s.git
+
+This package comes with a default model for predicting spikes from calcium traces, but also comes
+with tools for training and evaluating your own model.
 
 ## References
 
