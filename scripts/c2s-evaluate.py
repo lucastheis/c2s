@@ -21,7 +21,7 @@ from c2s.experiment import Experiment
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('dataset',              type=str)
-	parser.add_argument('predictions',          type=str, default='')
+	parser.add_argument('predictions',          type=str, nargs='?')
 	parser.add_argument('--downsampling', '-s', type=int, default=[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50], nargs='+')
 	parser.add_argument('--optimize',     '-z', type=int, default=1)
 	parser.add_argument('--method',       '-m', type=str, default='corr', choices=['corr', 'auc', 'info'])
@@ -34,7 +34,7 @@ def main(argv):
 
 	data = load_data(args.dataset)
 
-	if args.predictions == '':
+	if not args.predictions:
 		# use raw calcium signal for prediction
 		calcium_min = min(hstack(entry['calcium'] for entry in data))
 		for entry in data:

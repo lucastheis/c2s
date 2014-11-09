@@ -224,6 +224,15 @@ calculated, the performance is calculated at various sampling rates. For example
 will downsample the signals by the factors 1, 5, and 10 before performing an evaluation.
 I.e., if the given spike trains and predictions are sampled at 100 Hz, the evaluation will be
 performed at 100 Hz, 20 Hz, and 10 Hz.
+
+If no predictions but only a dataset is given to the evaluation, the calcium traces are used as
+predictions instead. Correlations, for example, are then computed between the calcium trace and
+the spike train. This can be used as a baseline measure.
+
+.. code-block:: bash
+
+    $ c2s evaluate data.preprocessed.pck
+
 Finally, the results can be saved into MATLAB or pickled Python files via:
 
 .. code-block:: bash

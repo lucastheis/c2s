@@ -46,9 +46,6 @@ def main(argv):
 	if args.preprocess:
 		data = preprocess(data)
 
-	predictions = []
-	correlations = []
-
 	# list of all cells
 	if 'cell_num' in data[0]:
 		# several trials/entries may belong to the same cell
@@ -100,6 +97,7 @@ def main(argv):
 			del entry['spike_times']
 		del entry['calcium']
 
+	# save results
 	if args.output.lower().endswith('.mat'):
 		savemat(args.output, {'data': data})
 

@@ -86,6 +86,7 @@ from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
 from cmt.tools import generate_data_from_image, extract_windows
 from cmt.transforms import PCATransform
 from cmt.utils import random_select
+from experiment import Experiment
 
 try:
 	from roc import roc
@@ -125,6 +126,9 @@ def load_data(filepath):
 			data.append(entry)
 
 		return data
+
+	if filepath.lower().endswith('.xpck'):
+		return Experiment(filepath)['data']
 
 	with open(filepath) as handle:
 		return load(handle)
