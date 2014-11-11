@@ -107,23 +107,29 @@ def load_data(filepath):
 	if filepath.lower().endswith('.mat'):
 		data = []
 		data_mat = loadmat(filepath)
-		data_mat = data_mat['data'].ravel()
 
-		for entry_mat in data_mat:
-			entry = {}
+		if 'data' in data_mat:
+			data_mat = data_mat['data'].ravel()
 
-			for key in entry_mat.dtype.names:
-				entry[key] = entry_mat[key][0, 0]
+			for entry_mat in data_mat:
+				entry = {}
 
-			for key in ['calcium', 'spikes', 'spike_times']:
-				if key in entry:
-					entry[key] = entry[key].reshape(1, entry[key].size)
-			if 'fps' in entry:
-				entry['fps'] = float(entry['fps'])
-			if 'cell_num' in entry:
-				entry['cell_num'] = int(entry['cell_num'])
+				for key in entry_mat.dtype.names:
+					entry[key] = entry_mat[key][0, 0]
 
-			data.append(entry)
+				for key in ['calcium', 'spikes', 'spike_times']:
+					if key in entry:
+						entry[key] = entry[key].reshape(1, entry[key].size)
+				if 'fps' in entry:
+					entry['fps'] = float(entry['fps'])
+				if 'cell_num' in entry:
+					entry['cell_num'] = int(entry['cell_num'])
+
+				data.append(entry)
+
+		elif 'predictions' in data_mat:
+			for predictions in data_mat['predictions'].ravel():
+				data.append({'predictions': predictions.reshape(1, predictions.size)})
 
 		return data
 
