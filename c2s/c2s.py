@@ -73,7 +73,7 @@ from base64 import b64decode
 from pickle import load, loads
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
-from numpy import corrcoef, array, eye, dot, empty_like
+from numpy import corrcoef, array, eye, dot, empty
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
@@ -205,6 +205,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 
 			data[k]['spike_times'] = sort(spike_times).reshape(1, -1)
 
+		# normalize sampling rate
 		if fps is not None and fps > 0.:
 			# number of samples after update of sampling rate
 			num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
@@ -561,8 +562,8 @@ def evaluate(data, method='corr', **kwargs):
 		for entry in data:
 			corr.append(
 				corrcoef(
-					downsample(entry['predictions'], kwargs['downsampling']),
-					downsample(entry['spikes'], kwargs['downsampling']))[0, 1])
+					downsample(entry['predictions'], kwargs['downsampling']).ravel(),
+					downsample(entry['spikes'], kwargs['downsampling']).ravel())[0, 1])
 
 		return array(corr)
 
@@ -600,8 +601,8 @@ def evaluate(data, method='corr', **kwargs):
 
 	else:
 		# downsample predictions and spike trains
-		spikes = [downsample(entry['spikes'], kwargs['downsampling']) for entry in data]
-		predictions = [downsample(entry['predictions'], kwargs['downsampling']) for entry in data]
+		spikes = [downsample(entry['spikes'], kwargs['downsampling']).ravel() for entry in data]
+		predictions = [downsample(entry['predictions'], kwargs['downsampling']).ravel() for entry in data]
 
 		if kwargs['optimize']:
 			# find optimal point-wise monotonic function
@@ -777,17 +778,28 @@ def robust_linear_regression(x, y, num_scales=3, max_iter=1000):
 def percentile_filter(x, window_length, perc=5):
 	"""
 	For each point in a signal, computes a percentile from a window surrounding it.
+
+	@type  window_length: int
+	@param window_length: length of window in bins
+
+	@type  perc: int
+	@param perc: which percentile to compute
+
+	@rtype: ndarray
+	@return: array of the same size as C{x} containing the percentiles
 	"""
 
-	y = empty_like(x)
+	shape = x.shape
+	x = x.ravel()
+	y = empty(x.size)
 	d = window_length // 2 + 1
 
-	for t in range(len(x)):
+	for t in range(x.size):
 		fr = max([t - d + 1, 0])
 		to = t + d
 		y[t] = percentile(x[fr:to], perc)
 
-	return y
+	return y.reshape(shape)
 
 
 
@@ -806,7 +818,7 @@ def downsample(signal, factor):
 	"""
 
 	if factor < 2:
-		return asarray(signal).ravel()
+		return asarray(signal)
 	return convolve(asarray(signal).ravel(), ones(factor), 'valid')[::factor]
 
 
