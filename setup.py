@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import numpy
 from setuptools import setup
 from c2s import __version__
+
 try:
 	from Cython.Build import cythonize
 except:
@@ -34,4 +36,5 @@ setup(
 		'Operating System :: OS Independent',
 		'Programming Language :: Python'),
 	ext_modules=cythonize("c2s/roc.pyx"),
+    include_dirs=[numpy.get_include()]
 )
