@@ -26,6 +26,7 @@ with tools for training and evaluating your own model.
 * NumPy >= 1.6.1
 * SciPy >= 0.13.0
 * Cython >= 0.20.0 (optional)
+* Matplotlib >= 1.4.2 (optional)
 
 ## Installation
 

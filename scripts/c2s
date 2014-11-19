@@ -26,6 +26,12 @@ def main(argv):
 	subparser = subparsers.add_parser('leave-one-out',
 		help='Predict firing rates of each cell by training on all other cells.')
 	subparser.add_argument('--command', default='leave-one-out')
+	subparser = subparsers.add_parser('info',
+		help='Print information about a dataset.')
+	subparser.add_argument('--command', default='info')
+	subparser = subparsers.add_parser('visualize',
+		help='Plot calcium traces, spike trains and predictions.')
+	subparser.add_argument('--command', default='visualize')
 
 	args = parser.parse_args(argv[1:2])
 
