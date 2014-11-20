@@ -3,7 +3,7 @@
 """
 Plot calcium traces and spike trains.
 
-Exapltes:
+Examples:
 
 	c2s visualize data.pck
 """
@@ -19,7 +19,7 @@ try:
 	from matplotlib import pyplot as plt
 except ImportError:
 	print 'Install `matplotlib` first.'
-	sys.exit()
+	sys.exit(1)
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)

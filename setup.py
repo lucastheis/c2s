@@ -36,5 +36,5 @@ setup(
 		'Operating System :: OS Independent',
 		'Programming Language :: Python'),
 	ext_modules=cythonize("c2s/roc.pyx"),
-    include_dirs=[numpy.get_include()]
+	include_dirs=[numpy.get_include()]
 )

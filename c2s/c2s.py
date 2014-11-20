@@ -73,7 +73,7 @@ from base64 import b64decode
 from pickle import load, loads
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
-from numpy import corrcoef, array, eye, dot, empty
+from numpy import corrcoef, array, eye, dot, empty, seterr
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
@@ -134,7 +134,15 @@ def load_data(filepath):
 		return data
 
 	if filepath.lower().endswith('.xpck'):
-		return Experiment(filepath)['data']
+		experiment = Experiment(filepath)
+		if 'data' in experiment.results:
+			return experiment['data']
+		if 'predictions' in experiment.results:
+			data = []
+			for predictions in experiment['predictions']:
+				data.append({'predictions': predictions.reshape(1, predictions.size)})
+			return data
+		return []
 
 	with open(filepath) as handle:
 		return load(handle)
@@ -702,6 +710,7 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 	constraints.extend([{'type': 'ineq', 'fun': lambda y: y[0]}])
 
 	# fit monotonic function
+	settings = seterr(invalid='ignore')
 	res = minimize(
 		fun=objf,
 		x0=x + 1e-6,
@@ -709,6 +718,7 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 		tol=1e-9,
 		constraints=constraints,
 		options={'disp': 1, 'iprint': verbosity})
+	seterr(invalid=settings['invalid'])
 
 	# construct monotonic piecewise linear function
 	return interp1d(x, res.x, bounds_error=False, fill_value=res.x[-1])
