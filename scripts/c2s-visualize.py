@@ -14,7 +14,8 @@ from argparse import ArgumentParser
 from pickle import dump
 from scipy.io import savemat
 from numpy import corrcoef, mean, arange, logical_and
-from c2s import load_data
+from c2s import load_data, preprocess
+
 try:
 	from matplotlib import pyplot as plt
 except ImportError:
@@ -23,15 +24,16 @@ except ImportError:
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('dataset',         type=str)
-	parser.add_argument('--output',  '-o', type=str, default='')
-	parser.add_argument('--seconds', '-S', type=int, default=60)
-	parser.add_argument('--offset',  '-O', type=int, default=0)
-	parser.add_argument('--width',   '-W', type=int, default=10)
-	parser.add_argument('--height',  '-H', type=int, default=0)
-	parser.add_argument('--cells',   '-c', type=int, default=[], nargs='+')
-	parser.add_argument('--dpi',     '-D', type=int, default=100)
-	parser.add_argument('--font',    '-F', type=str, default='Arial')
+	parser.add_argument('dataset',            type=str)
+	parser.add_argument('--preprocess', '-p', type=int, default=0)
+	parser.add_argument('--output',     '-o', type=str, default='')
+	parser.add_argument('--seconds',    '-S', type=int, default=60)
+	parser.add_argument('--offset',     '-O', type=int, default=0)
+	parser.add_argument('--width',      '-W', type=int, default=10)
+	parser.add_argument('--height',     '-H', type=int, default=0)
+	parser.add_argument('--cells',      '-c', type=int, default=[], nargs='+')
+	parser.add_argument('--dpi',        '-D', type=int, default=100)
+	parser.add_argument('--font',       '-F', type=str, default='Arial')
 
 	args = parser.parse_args(argv[1:])
 
@@ -39,6 +41,9 @@ def main(argv):
 	data = load_data(args.dataset)
 	cells = args.cells if args.cells else range(1, len(data) + 1)
 	data = [data[c - 1] for c in cells]
+
+	if args.preprocess:
+		data = preprocess(data)
 
 	plt.rcParams['font.family'] = args.font
 	plt.rcParams['savefig.dpi'] = args.dpi
