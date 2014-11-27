@@ -70,10 +70,11 @@ __version__ = '0.1.0dev'
 import sys
 from copy import copy, deepcopy
 from base64 import b64decode
+from warnings import warn
 from pickle import load, loads
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
-from numpy import corrcoef, array, eye, dot, empty, seterr
+from numpy import corrcoef, array, eye, dot, empty, seterr, isnan, any
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
@@ -673,6 +674,10 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 	if num_support < 2:
 		raise ValueError('`num_support` should be at least 2.')
 
+	if any(isnan(predictions)):
+		warn('Some predictions are NaN.')
+		predictions[isnan(predictions)] = 0.
+
 	# support points of piece-wise linear function
 	if num_support > 2:
 		F = predictions
@@ -847,7 +852,7 @@ def responses(data, results, verbosity=0):
 	@param verbosity: if positive, print messages indicating progress
 
 	@rtype: list
-	@return: list of dictionaries as input, but with added responses
+	@return: list of dictionaries like C{data}, but with added responses
 	"""
 
 	if type(data) is dict:
