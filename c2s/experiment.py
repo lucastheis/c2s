@@ -148,7 +148,7 @@ class Experiment:
 		self.server = ''
 
 		if self.seed is None:
-			self.seed = int((time() + 1e6 * rand()) * 1e3)
+			self.seed = int((time() + 1e6 * rand()) * 1e3) % 4294967295
 
 		# set random seed
 		random.seed(self.seed)
