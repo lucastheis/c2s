@@ -21,7 +21,7 @@ def main(argv):
 		help='Train a model with calcium traces and simultaneously recorded spikes.')
 	subparser.add_argument('--command', default='train')
 	subparser = subparsers.add_parser('evaluate',
-		help='Evaluate predictins in terms of correlations or Poisson log-likelihood.')
+		help='Evaluate predictions in terms of correlations or Poisson log-likelihood.')
 	subparser.add_argument('--command', default='evaluate')
 	subparser = subparsers.add_parser('leave-one-out',
 		help='Predict firing rates of each cell by training on all other cells.')
