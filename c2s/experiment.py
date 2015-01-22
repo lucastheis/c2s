@@ -12,6 +12,7 @@ __version__ = '0.4.3'
 import sys
 import os
 import numpy
+import random
 import scipy
 import socket
 
@@ -23,7 +24,7 @@ from subprocess import Popen, PIPE
 from os import path
 from warnings import warn
 from time import time, strftime, localtime
-from numpy import random, ceil, argsort
+from numpy import ceil, argsort
 from numpy.random import rand, randint
 from distutils.version import StrictVersion
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
@@ -148,7 +149,7 @@ class Experiment:
 		self.server = ''
 
 		if self.seed is None:
-			self.seed = int((time() + 1e6 * rand()) * 1e3)
+			self.seed = int((time() + 1e6 * rand()) * 1e3) % 4294967295
 
 		# set random seed
 		random.seed(self.seed)
