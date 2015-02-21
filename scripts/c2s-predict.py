@@ -41,7 +41,7 @@ def main(argv):
 
 	if args.model:
 		# load training results
-		results = Experiment(args.model)['model']
+		results = Experiment(args.model)['models']
 	else:
 		# use default model
 		results = None
