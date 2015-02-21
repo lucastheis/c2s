@@ -20,13 +20,16 @@ from c2s.experiment import Experiment
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
-	parser.add_argument('dataset',              type=str)
-	parser.add_argument('predictions',          type=str, nargs='?')
-	parser.add_argument('--downsampling', '-s', type=int, default=[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50], nargs='+')
-	parser.add_argument('--optimize',     '-z', type=int, default=1)
-	parser.add_argument('--method',       '-m', type=str, default='corr', choices=['corr', 'auc', 'info'])
-	parser.add_argument('--output',       '-o', type=str, default='')
-	parser.add_argument('--verbosity',    '-v', type=int, default=1)
+	parser.add_argument('dataset',                 type=str)
+	parser.add_argument('predictions',             type=str,   nargs='?')
+	parser.add_argument('--downsampling',    '-s', type=int,   default=[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50], nargs='+')
+	parser.add_argument('--optimize',        '-z', type=int,   default=1,
+		help='Whether or not to optimize point-wise nonlinearity when evaluating likelihood.')
+	parser.add_argument('--regularization',  '-r', type=float, default=5e-8,
+		help='Controls smoothness of optimized nonlinearity (default: 5e-8).')
+	parser.add_argument('--method',          '-m', type=str,   default='corr', choices=['corr', 'auc', 'info'])
+	parser.add_argument('--output',          '-o', type=str,   default='')
+	parser.add_argument('--verbosity',       '-v', type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
 
@@ -118,7 +121,7 @@ def main(argv):
 				downsampling=ds,
 				verbosity=args.verbosity,
 				return_all=True,
-				regularize=5e-8)
+				regularize=args.regularization)
 
 			loglik.append(L)
 			entropy.append(H)

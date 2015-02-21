@@ -599,6 +599,10 @@ def evaluate(data, method='corr', **kwargs):
 				mask = spikes > .5
 			pos = hstack(pos)
 
+			# roc(pos, neg) only works with floats
+			neg = asarray(neg, dtype=float)
+			pos = asarray(pos, dtype=float)
+
 			try:
 				# compute area under curve
 				auc.append(roc(pos, neg)[0])
@@ -684,8 +688,15 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 		F = F[F > (max(F) - min(F)) / 100.]
 		x = list(percentile(F, range(0, 101, num_support)[1:-1]))
 		x = asarray([0] + x + [max(F)])
+
+		for i in range(len(x) - 1):
+			if x[i + 1] - x[i] < 1e-6:
+				x[i + 1] = x[i] + 1e-6
 	else:
 		x = asarray([min(predictions), max(predictions)])
+
+		if x[1] - x[0] < 1e-6:
+			x[1] += 1e-6
 
 	def objf(y):
 		# construct piece-wise linear function
