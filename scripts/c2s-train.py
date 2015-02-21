@@ -14,7 +14,7 @@ import sys
 
 from argparse import ArgumentParser, HelpFormatter
 from pickle import load
-from numpy import mean, corrcoef
+from numpy import mean, corrcoef, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
 from c2s import train, predict, preprocess
@@ -67,13 +67,22 @@ def main(argv):
 	if args.preprocess:
 		data = preprocess(data, args.verbosity)
 
+	if 'cell_num' not in data[0]:
+		# no cell number is given, assume traces correspond to cells
+		for k, entry in enumerate(data):
+			entry['cell_num'] = k
+
+	# collect cell ids
+	cell_ids = unique([entry['cell_num'] for entry in data])
+	
 	# pick cells for training
 	if args.num_train > 0:
-		training_cells = random_select(args.num_train, len(data))
+		training_cells = random_select(args.num_train, len(cell_ids))
 	else:
-		training_cells = range(len(data))
+		# use all cells for training
+		training_cells = range(len(cell_ids))
 
-	models = train([data[cell_id] for cell_id in training_cells],
+	models = train([entry for entry in data if entry['cell_num'] in training_cells],
 		num_valid=args.num_valid,
 		num_models=args.num_models,
 		var_explained=args.var_explained,
@@ -81,8 +90,8 @@ def main(argv):
 		keep_all=args.keep_all,
 		finetune=args.finetune,
 		model_parameters={
-				'num_components': args.num_components,
-				'num_features': args.num_features},
+			'num_components': args.num_components,
+			'num_features': args.num_features},
 		training_parameters={
 			'verbosity': 1},
 		regularize=args.regularize,
