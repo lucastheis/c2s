@@ -14,7 +14,7 @@ import sys
 from argparse import ArgumentParser
 from scipy.io import savemat
 from pickle import load
-from numpy import mean, min, hstack, asarray, average, unique
+from numpy import mean, min, hstack, asarray, average, unique, ones
 from c2s import evaluate, load_data
 from c2s.experiment import Experiment
 
@@ -40,13 +40,14 @@ def print_weighted_average(result, data, downsampling):
 		cell_nums = range(len(cell_results))
 		cell_fps = asarray([entry['fps'] / downsampling for entry in data])
 		cell_weights = [len(entry['calcium']) / entry['fps'] for entry in data]
-		weighted_average = average(cell_results, weights=cell_weights)
+		number_of_traces = ones(len(cell_results))
 	else:
 		# the following code can be written more efficiently,
 		# but it's not necessary given the small number of traces and cells
 		
 		cell_nums = unique([entry['cell_num'] for entry in data])
 		cell_results = []
+		number_of_traces = []
 		cell_fps = []
 		cell_weights = []
 		for i in cell_nums:
@@ -62,16 +63,20 @@ def print_weighted_average(result, data, downsampling):
 			cell_results.append(average(traces_results, weights=traces_weights))
 			cell_fps.append(average(traces_fps, weights=traces_weights))
 			cell_weights.append(sum(traces_weights))
+			number_of_traces.append(len(traces_results))
 		
 		cell_results = asarray(cell_results)
+		number_of_traces = asarray(number_of_traces)
 		cell_fps = asarray(cell_fps)
-		weighted_average = average(cell_results, weights=cell_weights)
+	
+	weighted_average = average(cell_results, weights=cell_weights)
+	weighted_average_fps = average(cell_fps, weights=cell_weights)
 	
 	for k, r in enumerate(cell_results):
-		print '{0:>5} {1:>6.1f} {2:>8.3f}'.format(cell_nums[k], cell_fps[k], r)
+		print '{0:>5} {1:>7} {2:>6.1f} {3:>8.3f}'.format(cell_nums[k], number_of_traces[k], cell_fps[k], r)
 
 	print '-------------------------'
-	print '{0:>5} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(cell_fps), weighted_average)
+	print '{0:>5} {1:>7} {2:>6.1f} {3:>8.3f}'.format('Avg.', '', weighted_average_fps, weighted_average)
 	print
 
 def main(argv):
@@ -127,15 +132,20 @@ def main(argv):
 
 	for ds in args.downsampling:
 		if args.verbosity > 0:
-			header = 'Trace'
 			if args.weighted_average:
-				header = 'Cell'
-			if args.method.lower().startswith('c'):
-				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'Correlation')
-			elif args.method.lower().startswith('a'):
-				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'AUC')
+				if args.method.lower().startswith('c'):
+					print '{0:>5} {1:>7} {2:>7} {3}'.format('Cell', '#Traces', 'FPS ', 'Correlation')
+				elif args.method.lower().startswith('a'):
+					print '{0:>5} {1:>7} {2:>7} {3}'.format('Cell', '#Traces', 'FPS ', 'AUC')
+				else:
+					print '{0:>5} {1:>7} {2:>7} {3}'.format('Cell', '#Traces', 'FPS ', 'Information gain')
 			else:
-				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'Information gain')
+				if args.method.lower().startswith('c'):
+					print '{0:>5} {1:>7} {2}'.format('Trace', 'FPS ', 'Correlation')
+				elif args.method.lower().startswith('a'):
+					print '{0:>5} {1:>7} {2}'.format('Trace', 'FPS ', 'AUC')
+				else:
+					print '{0:>5} {1:>7} {2}'.format('Trace', 'FPS ', 'Information gain')
 
 		fps.append([])
 		for entry in data:
