@@ -70,11 +70,11 @@ def main(argv):
 	for ds in args.downsampling:
 		if args.verbosity > 0:
 			if args.method.lower().startswith('c'):
-				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'Correlation')
+				print '{0:>5} {1:>6} {2}'.format('Trace', 'FPS ', 'Correlation')
 			elif args.method.lower().startswith('a'):
-				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'AUC')
+				print '{0:>5} {1:>6} {2}'.format('Trace', 'FPS ', 'AUC')
 			else:
-				print '{0:>5} {1:>6} {2}'.format('Cell', 'FPS ', 'Information gain')
+				print '{0:>5} {1:>6} {2}'.format('Trace', 'FPS ', 'Information gain')
 
 		fps.append([])
 		for entry in data:
