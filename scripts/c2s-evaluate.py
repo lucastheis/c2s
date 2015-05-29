@@ -18,6 +18,14 @@ from numpy import mean, min, hstack, asarray
 from c2s import evaluate, load_data
 from c2s.experiment import Experiment
 
+def print_traces(result, fps):
+	for k, r in enumerate(result):
+		print '{0:>5} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], r)
+
+	print '-------------------------'
+	print '{0:>5} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(result))
+	print
+
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
 	parser.add_argument('dataset',                 type=str)
@@ -90,12 +98,7 @@ def main(argv):
 			correlations.append(R)
 
 			if args.verbosity > 0:
-				for k, r in enumerate(R):
-					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], r)
-
-				print '-------------------------'
-				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(R))
-				print
+				print_traces(R, fps)
 
 		elif args.method.lower().startswith('a'):
 			# compute correlations
@@ -107,12 +110,7 @@ def main(argv):
 			auc.append(A)
 
 			if args.verbosity > 0:
-				for k, a in enumerate(A):
-					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], a)
-
-				print '-------------------------'
-				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(A))
-				print
+				print_traces(A, fps)
 
 		else:
 			# compute log-likelihoods
@@ -128,12 +126,7 @@ def main(argv):
 			functions.append((f.x, f.y))
 
 			if args.verbosity > 0:
-				for k, I in enumerate(H + L):
-					print '{0:>4} {1:>6.1f} {2:>8.3f}'.format(k, fps[-1][k], I)
-
-				print '-------------------------'
-				print '{0:>4} {1:>6.1f} {2:>8.3f}'.format('Avg.', mean(fps[-1]), mean(H + L))
-				print
+				print_traces(H + L, fps)
 
 	if args.output.lower().endswith('.mat'):
 
