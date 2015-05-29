@@ -14,7 +14,7 @@ import sys
 from argparse import ArgumentParser
 from scipy.io import savemat
 from pickle import load
-from numpy import mean, min, hstack, asarray, average
+from numpy import mean, min, hstack, asarray, average, unique
 from c2s import evaluate, load_data
 from c2s.experiment import Experiment
 
