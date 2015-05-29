@@ -57,7 +57,7 @@ def print_weighted_average(result, data, downsampling):
 			# find the results and weights for all traces belonging to cell i
 			for k, entry in enumerate(data):
 				if entry['cell_num'] == i:
-					traces_results.append(result[i])
+					traces_results.append(result[k])
 					traces_fps.append(entry['fps'] / downsampling)
 					traces_weights.append(len(entry['calcium']) / entry['fps'])
 			cell_results.append(average(traces_results, weights=traces_weights))
@@ -75,7 +75,7 @@ def print_weighted_average(result, data, downsampling):
 	for k, r in enumerate(cell_results):
 		print '{0:>5} {1:>7} {2:>6.1f} {3:>8.3f}'.format(cell_nums[k], number_of_traces[k], cell_fps[k], r)
 
-	print '-------------------------'
+	print '-----------------------------'
 	print '{0:>5} {1:>7} {2:>6.1f} {3:>8.3f}'.format('Avg.', '', weighted_average_fps, weighted_average)
 	print
 
