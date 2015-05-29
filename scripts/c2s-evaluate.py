@@ -38,7 +38,7 @@ def print_weighted_average(result, data, downsampling):
 	if not 'cell_num' in data[0]:
 		cell_results = result
 		cell_nums = range(len(cell_results))
-		cell_fps = array([entry['fps'] / downsampling for entry in data])
+		cell_fps = asarray([entry['fps'] / downsampling for entry in data])
 		cell_weights = [len(entry['calcium']) / entry['fps'] for entry in data]
 		weighted_average = average(cell_results, weights=cell_weights)
 	else:
@@ -63,8 +63,8 @@ def print_weighted_average(result, data, downsampling):
 			cell_fps.append(average(traces_fps, weights=traces_weights))
 			cell_weights.append(sum(traces_weights))
 		
-		cell_results = array(cell_results)
-		cell_fps = array(cell_fps)
+		cell_results = asarray(cell_results)
+		cell_fps = asarray(cell_fps)
 		weighted_average = average(cell_results, weights=cell_weights)
 	
 	for k, r in enumerate(cell_results):
