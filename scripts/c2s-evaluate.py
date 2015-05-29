@@ -36,8 +36,8 @@ def print_weighted_average(result, data, downsampling):
 	"""
 	
 	if not 'cell_num' in data[0]:
-		cell_nums = range(len(cell_results))
 		cell_results = result
+		cell_nums = range(len(cell_results))
 		cell_fps = array([entry['fps'] / downsampling for entry in data])
 		cell_weights = [len(entry['calcium']) / entry['fps'] for entry in data]
 		weighted_average = average(cell_results, weights=cell_weights)
@@ -131,11 +131,11 @@ def main(argv):
 			if args.weighted_average:
 				header = 'Cell'
 			if args.method.lower().startswith('c'):
-				print '{0:>5} {1:>6} {2}'.format(header, 'FPS ', 'Correlation')
+				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'Correlation')
 			elif args.method.lower().startswith('a'):
-				print '{0:>5} {1:>6} {2}'.format(header, 'FPS ', 'AUC')
+				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'AUC')
 			else:
-				print '{0:>5} {1:>6} {2}'.format(header, 'FPS ', 'Information gain')
+				print '{0:>5} {1:>7} {2}'.format(header, 'FPS ', 'Information gain')
 
 		fps.append([])
 		for entry in data:
