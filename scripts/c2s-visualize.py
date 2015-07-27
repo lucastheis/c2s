@@ -17,6 +17,8 @@ from numpy import corrcoef, mean, arange, logical_and
 from c2s import load_data, preprocess
 
 try:
+	import matplotlib
+	matplotlib.use('Agg')
 	from matplotlib import pyplot as plt
 except ImportError:
 	print 'Install `matplotlib` first.'
