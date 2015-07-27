@@ -5,8 +5,7 @@ Remove trends and normalize sampling rate.
 
 Examples:
 
-	c2s preprocess data.pck data.preprocessed.pck
-	c2s preprocess -t mat data.mat data.preprocessed.mat
+	c2s preprocess data.pck data.preprocessed.pck data.preprocessed.mat
 """
 
 import sys
