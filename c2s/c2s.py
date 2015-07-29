@@ -678,6 +678,10 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 	if num_support < 2:
 		raise ValueError('`num_support` should be at least 2.')
 
+	if any(predictions < 0.):
+		warn('Some firing rate predictions are smaller than zero.')
+		predictions[predictions < 0.] = 0.
+
 	if any(isnan(predictions)):
 		warn('Some predictions are NaN.')
 		predictions[isnan(predictions)] = 0.
@@ -687,7 +691,7 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 		F = predictions
 		F = F[F > (max(F) - min(F)) / 100.]
 		x = list(percentile(F, range(0, 101, num_support)[1:-1]))
-		x = asarray([0] + x + [max(F)])
+		x = asarray([0.] + x + [max(F)])
 
 		for i in range(len(x) - 1):
 			if x[i + 1] - x[i] < 1e-6:
