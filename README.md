@@ -34,8 +34,10 @@ First install the [Conditional Modeling Toolkit](https://github.com/lucastheis/c
 
 	$ pip install git+https://github.com/lucastheis/c2s.git
 
-This package comes with a default model for predicting spikes from calcium traces, but also comes
-with tools for training and evaluating your own model.
+You can avoid manually installing c2s and its requirements by using
+[Docker](https://www.docker.com). A Dockerfile for c2s is provided
+by [Jonas Rauber](https://github.com/jonasrauber/c2s-docker). This might make your life
+easier especially if you are planning to use Windows or Mac OS.
 
 ## References
 
