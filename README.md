@@ -44,3 +44,18 @@ If you use our code in your research, please cite the following paper:
 L. Theis, P. Berens, E. Froudarakis, J. Reimer, M. Roman-Roson, T. Baden, T. Euler, A. S. Tolias, et al.  
 [Supervised learning sets benchmark for robust spike detection from calcium imaging signals](http://bethgelab.org/publications/127/)  
 bioRxiv, 2014
+
+The default model was trained on many datasets (together containing roughly 110,000 spikes) from
+different labs. Therefore, if you use the default model for prediction, please also cite:
+
+J. R. Cotton, E. Froudarakis, P. Storer, P. Saggau, and A. S. Tolias  
+Three-dimensional mapping of microcircuit correlation structure  
+Frontiers in Neural Circuits, 2013
+
+J. Akerboom et al.  
+Optimization of a GCaMP calcium indicator for neural activity imaging  
+Journal of Neuroscience, 2012
+
+T. W. Chen et al.  
+Ultrasensitive fluorescent proteins for imaging neuronal activity  
+Nature, 2013

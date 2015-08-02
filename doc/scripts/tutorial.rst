@@ -141,9 +141,9 @@ preprocessed yet, use
 
 The predictions are saved in the same format as the data files, except that the entries
 ``spikes``, ``spike_times`` and ``calcium`` are removed to save space. By default, the prediction
-uses a model which has been trained on data recorded from V1 of mice using OGB1 as indicator. But
-it is possible to train a model which is better adapted to our data. Once trained, the model can be
-used for prediction as follows:
+uses a model which has been trained on several datasets recorded by different labs under different
+conditions. These datasets combined contained roughly 110,000 spikes. But it is possible to train
+a model specifically for our data. Once trained, the model can be used for prediction as follows:
 
 .. code-block:: bash
 
@@ -170,6 +170,7 @@ To print a list of available parameters to influence the training, please see:
 .. code-block:: bash
 
     $ c2s train -h
+
 
 Evaluation
 ----------
