@@ -61,7 +61,7 @@ used when making predictions.
 @undocumented: generate_inputs_and_outputs
 @undocumented: DEFAULT_MODEL
 """
-
+from __future__ import absolute_import, division, print_function, unicode_literals
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
 __author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
@@ -87,7 +87,7 @@ from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
 from cmt.tools import generate_data_from_image, extract_windows
 from cmt.transforms import PCATransform
 from cmt.utils import random_select
-from experiment import Experiment
+from .experiment import Experiment
 
 try:
 	from roc import roc
@@ -182,7 +182,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 
 	for k in range(len(data)):
 		if verbosity > 0:
-			print 'Preprocessing calcium trace {0}...'.format(k)
+			print('Preprocessing calcium trace {0}...'.format(k))
 
 		data[k]['fps'] = float(data[k]['fps'])
 
@@ -296,7 +296,7 @@ def train(data,
 
 	@type  num_valid: int
 	@param num_valid: number of cells used for early stopping based on a validation set
-	
+
 	@type  num_models: int
 	@param num_models: to counter local optima and other randomness, multiple models can be trained
 
@@ -339,7 +339,7 @@ def train(data,
 	output_mask[1, window_length / 2] = True
 
 	if verbosity > 0:
-		print 'Extracting inputs and outputs...'
+		print('Extracting inputs and outputs...')
 
 	for entry in data:
 		# extract windows from fluorescence trace and corresponding spike counts
@@ -349,12 +349,12 @@ def train(data,
 	inputs = hstack(entry['inputs'] for entry in data)
 
 	if verbosity > 0:
-		print 'Performing PCA...'
+		print('Performing PCA...')
 
 	pca = PCATransform(inputs, var_explained=var_explained)
 
 	if verbosity > 0:
-		print 'Reducing dimensionality of data...'
+		print('Reducing dimensionality of data...')
 
 	for entry in data:
 		entry['inputs'] = pca(entry['inputs'])
@@ -363,7 +363,7 @@ def train(data,
 
 	for _ in range(num_models):
 		if verbosity > 0:
-			print 'Training STM...'
+			print('Training STM...')
 
 		model = STM(
 			dim_in_nonlinear=pca.dim_in_pre,
@@ -399,13 +399,13 @@ def train(data,
 				'strength': regularize / 10.,
 				'transform': transform,
 				'norm': 'L1'}
-			
+
 		# train model
 		model.train(*inputs_outputs, parameters=training_parameters)
 
 		if finetune:
 			if verbosity > 0:
-				print 'Finetuning STM...'
+				print('Finetuning STM...')
 
 			# use flexible nonlinearity
 			model.nonlinearity = BlobNonlinearity(num_components=3)
@@ -428,7 +428,7 @@ def train(data,
 
 	if not keep_all:
 		if verbosity > 0:
-			print 'Only keep STM with best performance...'
+			print('Only keep STM with best performance...')
 
 		inputs = hstack(entry['inputs'] for entry in data)
 		outputs = hstack(entry['outputs'] for entry in data)
@@ -493,7 +493,7 @@ def predict(data, results=None, max_spikes_per_sec=1000., verbosity=1):
 
 	for k, entry in enumerate(data):
 		if verbosity > 0:
-			print 'Predicting cell {0}...'.format(k)
+			print('Predicting cell {0}...'.format(k))
 
 		max_spikes = max_spikes_per_sec / float(entry['fps'])
 
@@ -557,11 +557,11 @@ def evaluate(data, method='corr', **kwargs):
 	kwargs.setdefault('verbosity', 2)
 
 	if 'downsample' in kwargs:
-		print 'Did you mean `downsampling`?'
+		print('Did you mean `downsampling`?')
 		return
 
 	if 'regularization' in kwargs:
-		print 'Did you mean `regularize`?'
+		print('Did you mean `regularize`?')
 		return
 
 	if method.lower().startswith('c'):
@@ -607,7 +607,7 @@ def evaluate(data, method='corr', **kwargs):
 				# compute area under curve
 				auc.append(roc(pos, neg)[0])
 			except NameError:
-				print 'You need to compile `roc.pyx` with cython first.'
+				print('You need to compile `roc.pyx` with cython first.')
 				sys.exit(1)
 
 		return array(auc)
@@ -711,7 +711,7 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 
 		# compute negative log-likelihood (ignoring constants)
 		K = mean(l - spikes * log(l))
-		
+
 		# regularize curvature
 		z = (x[2:] - x[:-2]) / 2.
 		K = K + regularize * sum(square(diff(diff(y) / diff(x)) / z))
@@ -747,7 +747,7 @@ def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, v
 
 def robust_linear_regression(x, y, num_scales=3, max_iter=1000):
 	"""
-	Performs linear regression with Gaussian scale mixture residuals. 
+	Performs linear regression with Gaussian scale mixture residuals.
 
 	$$y = ax + b + \\varepsilon,$$
 
@@ -886,7 +886,7 @@ def responses(data, results, verbosity=0):
 
 	for k, entry in enumerate(data):
 		if verbosity > 0:
-			print 'Computing responses for cell {0}...'.format(k)
+			print('Computing responses for cell {0}...'.format(k))
 
 		# pick first model
 		if type(results) is STM:
@@ -915,7 +915,7 @@ def generate_inputs_and_outputs(data, var_explained=95., window_length=1000., pc
 
 	@type  data: list
 	@param data: list of dictionaries containig calcium/fluorescence traces
-	
+
 	@type  var_explained: float
 	@param var_explained: controls the number of principal components used to represent calcium window
 
@@ -939,7 +939,7 @@ def generate_inputs_and_outputs(data, var_explained=95., window_length=1000., pc
 	output_mask[1, window_length / 2] = True
 
 	if verbosity > 0:
-		print 'Extracting inputs and outputs...'
+		print('Extracting inputs and outputs...')
 
 	for entry in data:
 		# extract windows from fluorescence trace and corresponding spike counts
@@ -950,12 +950,12 @@ def generate_inputs_and_outputs(data, var_explained=95., window_length=1000., pc
 		inputs = hstack(entry['inputs'] for entry in data)
 
 		if verbosity > 0:
-			print 'Performing PCA...'
+			print('Performing PCA...')
 
 		pca = PCATransform(inputs, var_explained=var_explained)
 
 	if verbosity > 0:
-		print 'Reducing dimensionality of data...'
+		print('Reducing dimensionality of data...')
 
 	for entry in data:
 		entry['inputs'] = pca(entry['inputs'])
