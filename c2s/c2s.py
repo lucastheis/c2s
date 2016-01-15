@@ -62,6 +62,7 @@ used when making predictions.
 @undocumented: DEFAULT_MODEL
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
+
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
 __author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
@@ -90,884 +91,880 @@ from cmt.utils import random_select
 from .experiment import Experiment
 
 try:
-	from roc import roc
+    from roc import roc
 except:
-	pass
+    pass
+
+PYTHON3 = sys.version.startswith('3.')
 
 def load_data(filepath):
-	"""
-	Loads data in either pickle or MATLAB format.
+    """
+    Loads data in either pickle or MATLAB format.
 
-	@type  filepath: string
-	@param filepath: path to dataset
+    @type  filepath: string
+    @param filepath: path to dataset
 
-	@rtype: list
-	@return: list of dictionaries containing the data
-	"""
+    @rtype: list
+    @return: list of dictionaries containing the data
+    """
 
-	if filepath.lower().endswith('.mat'):
-		data = []
-		data_mat = loadmat(filepath)
+    if filepath.lower().endswith('.mat'):
+        data = []
+        data_mat = loadmat(filepath)
 
-		if 'data' in data_mat:
-			data_mat = data_mat['data'].ravel()
+        if 'data' in data_mat:
+            data_mat = data_mat['data'].ravel()
 
-			for entry_mat in data_mat:
-				entry = {}
+            for entry_mat in data_mat:
+                entry = {}
 
-				for key in entry_mat.dtype.names:
-					entry[key] = entry_mat[key][0, 0]
+                for key in entry_mat.dtype.names:
+                    entry[key] = entry_mat[key][0, 0]
 
-				for key in ['calcium', 'spikes', 'spike_times']:
-					if key in entry:
-						entry[key] = entry[key].reshape(1, entry[key].size)
-				if 'fps' in entry:
-					entry['fps'] = float(entry['fps'])
-				if 'cell_num' in entry:
-					entry['cell_num'] = int(entry['cell_num'])
+                for key in ['calcium', 'spikes', 'spike_times']:
+                    if key in entry:
+                        entry[key] = entry[key].reshape(1, entry[key].size)
+                if 'fps' in entry:
+                    entry['fps'] = float(entry['fps'])
+                if 'cell_num' in entry:
+                    entry['cell_num'] = int(entry['cell_num'])
 
-				data.append(entry)
+                data.append(entry)
 
-		elif 'predictions' in data_mat:
-			for predictions in data_mat['predictions'].ravel():
-				data.append({'predictions': predictions.reshape(1, predictions.size)})
+        elif 'predictions' in data_mat:
+            for predictions in data_mat['predictions'].ravel():
+                data.append({'predictions': predictions.reshape(1, predictions.size)})
 
-		return data
+        return data
 
-	if filepath.lower().endswith('.xpck'):
-		experiment = Experiment(filepath)
-		if 'data' in experiment.results:
-			return experiment['data']
-		if 'predictions' in experiment.results:
-			data = []
-			for predictions in experiment['predictions']:
-				data.append({'predictions': predictions.reshape(1, predictions.size)})
-			return data
-		return []
+    if filepath.lower().endswith('.xpck'):
+        experiment = Experiment(filepath)
+        if 'data' in experiment.results:
+            return experiment['data']
+        if 'predictions' in experiment.results:
+            data = []
+            for predictions in experiment['predictions']:
+                data.append({'predictions': predictions.reshape(1, predictions.size)})
+            return data
+        return []
 
-	with open(filepath) as handle:
-		return load(handle)
-
+    with open(filepath) as handle:
+        return load(handle)
 
 
 def preprocess(data, fps=100., filter=None, verbosity=0):
-	"""
-	Normalize calcium traces and spike trains.
+    """
+    Normalize calcium traces and spike trains.
 
-	This function does three things:
-		1. Remove any linear trends using robust linear regression.
-		2. Normalize the range of the calcium trace by the 5th and 80th percentile.
-		3. Change the sampling rate of the calcium trace and spike train.
+    This function does three things:
+        1. Remove any linear trends using robust linear regression.
+        2. Normalize the range of the calcium trace by the 5th and 80th percentile.
+        3. Change the sampling rate of the calcium trace and spike train.
 
-	If C{filter} is set, the first step is replaced by estimating and removing a baseline using
-	a percentile filter (40 seconds seems like a good value for the percentile filter).
+    If C{filter} is set, the first step is replaced by estimating and removing a baseline using
+    a percentile filter (40 seconds seems like a good value for the percentile filter).
 
-	@type  data: list
-	@param data: list of dictionaries containing calcium/fluorescence traces
+    @type  data: list
+    @param data: list of dictionaries containing calcium/fluorescence traces
 
-	@type  fps: float
-	@param fps: desired sampling rate of signals
+    @type  fps: float
+    @param fps: desired sampling rate of signals
 
-	@type  filter: float/None
-	@param filter: number of seconds used in percentile filter
+    @type  filter: float/None
+    @param filter: number of seconds used in percentile filter
 
-	@type  verbosity: int
-	@param verbosity: if positive, print messages indicating progress
+    @type  verbosity: int
+    @param verbosity: if positive, print messages indicating progress
 
-	@rtype: list
-	@return: list of preprocessed recordings
-	"""
+    @rtype: list
+    @return: list of preprocessed recordings
+    """
 
-	data = deepcopy(data)
+    data = deepcopy(data)
 
-	for k in range(len(data)):
-		if verbosity > 0:
-			print('Preprocessing calcium trace {0}...'.format(k))
+    for k in range(len(data)):
+        if verbosity > 0:
+            print('Preprocessing calcium trace {0}...'.format(k))
 
-		data[k]['fps'] = float(data[k]['fps'])
+        data[k]['fps'] = float(data[k]['fps'])
 
-		if filter is None:
-			# remove any linear trends
-			x = arange(data[k]['calcium'].size)
-			a, b = robust_linear_regression(x, data[k]['calcium'])
+        if filter is None:
+            # remove any linear trends
+            x = arange(data[k]['calcium'].size)
+            a, b = robust_linear_regression(x, data[k]['calcium'])
 
-			data[k]['calcium'] = data[k]['calcium'] - (a * x + b)
-		else:
-			data[k]['calcium'] = data[k]['calcium'] - \
-				percentile_filter(data[k]['calcium'], window_length=int(data[k]['fps'] * filter), perc=5)
+            data[k]['calcium'] = data[k]['calcium'] - (a * x + b)
+        else:
+            data[k]['calcium'] = data[k]['calcium'] - \
+                                 percentile_filter(data[k]['calcium'], window_length=int(data[k]['fps'] * filter),
+                                                   perc=5)
 
-		# normalize dispersion
-		calcium05 = percentile(data[k]['calcium'],  5)
-		calcium80 = percentile(data[k]['calcium'], 80)
+        # normalize dispersion
+        calcium05 = percentile(data[k]['calcium'], 5)
+        calcium80 = percentile(data[k]['calcium'], 80)
 
-		if calcium80 - calcium05 > 0.:
-			data[k]['calcium'] = (data[k]['calcium'] - calcium05) / float(calcium80 - calcium05)
+        if calcium80 - calcium05 > 0.:
+            data[k]['calcium'] = (data[k]['calcium'] - calcium05) / float(calcium80 - calcium05)
 
-		# compute spike times if binned spikes are given
-		if 'spikes' in data[k] and 'spike_times' not in data[k]:
-			spikes = asarray(data[k]['spikes'].ravel(), dtype='uint16')
+        # compute spike times if binned spikes are given
+        if 'spikes' in data[k] and 'spike_times' not in data[k]:
+            spikes = asarray(data[k]['spikes'].ravel(), dtype='uint16')
 
-			# compute spike times in milliseconds
-			spike_times = where(spikes > 0)[0]
-			spike_times = repeat(spike_times, spikes[spike_times])
-			spike_times = (spike_times + rand(*spike_times.shape)) * (1000. / data[k]['fps'])
+            # compute spike times in milliseconds
+            spike_times = where(spikes > 0)[0]
+            spike_times = repeat(spike_times, spikes[spike_times])
+            spike_times = (spike_times + rand(*spike_times.shape)) * (1000. / data[k]['fps'])
 
-			data[k]['spike_times'] = sort(spike_times).reshape(1, -1)
+            data[k]['spike_times'] = sort(spike_times).reshape(1, -1)
 
-		# normalize sampling rate
-		if fps is not None and fps > 0.:
-			# number of samples after update of sampling rate
-			num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
+        # normalize sampling rate
+        if fps is not None and fps > 0.:
+            # number of samples after update of sampling rate
+            num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
 
-			if num_samples != data[k]['calcium'].size:
-				# factor by which number of samples will actually be changed
-				factor = num_samples / float(data[k]['calcium'].size)
+            if num_samples != data[k]['calcium'].size:
+                # factor by which number of samples will actually be changed
+                factor = num_samples / float(data[k]['calcium'].size)
 
-				# resample calcium signal
-				data[k]['calcium'] = resample(data[k]['calcium'].ravel(), num_samples).reshape(1, -1)
-				data[k]['fps'] = data[k]['fps'] * factor
-		else:
-			# don't change sampling rate
-			num_samples = data[k]['calcium'].size
+                # resample calcium signal
+                data[k]['calcium'] = resample(data[k]['calcium'].ravel(), num_samples).reshape(1, -1)
+                data[k]['fps'] = data[k]['fps'] * factor
+        else:
+            # don't change sampling rate
+            num_samples = data[k]['calcium'].size
 
-		# compute binned spike trains if missing
-		if 'spike_times' in data[k] and ('spikes' not in data[k] or num_samples != data[k]['spikes'].size):
-			# spike times in bins
-			spike_times = asarray(data[k]['spike_times'] * (data[k]['fps'] / 1000.), dtype=int).ravel()
-			spike_times = spike_times[spike_times < num_samples]
-			spike_times = spike_times[spike_times >= 0]
+        # compute binned spike trains if missing
+        if 'spike_times' in data[k] and ('spikes' not in data[k] or num_samples != data[k]['spikes'].size):
+            # spike times in bins
+            spike_times = asarray(data[k]['spike_times'] * (data[k]['fps'] / 1000.), dtype=int).ravel()
+            spike_times = spike_times[spike_times < num_samples]
+            spike_times = spike_times[spike_times >= 0]
 
-			# create binned spike train
-			data[k]['spikes'] = zeros([1, num_samples], dtype='uint16')
-			for t in spike_times:
-				data[k]['spikes'][0, t] += 1
+            # create binned spike train
+            data[k]['spikes'] = zeros([1, num_samples], dtype='uint16')
+            for t in spike_times:
+                data[k]['spikes'][0, t] += 1
 
-	return data
-
+    return data
 
 
 def train(data,
-		num_valid=0,
-		num_models=1,
-		var_explained=95.,
-		window_length=1000.,
-		finetune=False,
-		keep_all=True,
-		verbosity=1,
-		model_parameters={},
-		training_parameters={},
-		regularize=0.):
-	"""
-	Trains models on the task of predicting spike trains from calcium traces.
+          num_valid=0,
+          num_models=1,
+          var_explained=95.,
+          window_length=1000.,
+          finetune=False,
+          keep_all=True,
+          verbosity=1,
+          model_parameters={},
+          training_parameters={},
+          regularize=0.):
+    """
+    Trains models on the task of predicting spike trains from calcium traces.
 
-	This function takes a dataset and trains one or several models (STMs) to predict spikes
-	from calcium signals. By default, the method trains a single model on 1000ms windows
-	extracted from the calcium (fluorescence) traces.
+    This function takes a dataset and trains one or several models (STMs) to predict spikes
+    from calcium signals. By default, the method trains a single model on 1000ms windows
+    extracted from the calcium (fluorescence) traces.
 
-		>>> results = train(data)
+        >>> results = train(data)
 
-	See above for an explanation of the expected data format. A more detailed example:
+    See above for an explanation of the expected data format. A more detailed example:
 
-		>>> results = train(data,
-		>>>	num_models=4,
-		>>>	var_explained=98.,
-		>>>	window_length=800.,
-		>>>	model_parameters={
-		>>>		'num_components': 3,
-		>>>		'num_features': 2},
-		>>>	training_parameters={
-		>>>		'max_iter': 3000,
-		>>>		'threshold': 1e-9})
+        >>> results = train(data,
+        >>>	num_models=4,
+        >>>	var_explained=98.,
+        >>>	window_length=800.,
+        >>>	model_parameters={
+        >>>		'num_components': 3,
+        >>>		'num_features': 2},
+        >>>	training_parameters={
+        >>>		'max_iter': 3000,
+        >>>		'threshold': 1e-9})
 
-	For an explanation on the model and training parameters, please see the
-	U{CMT documentation<http://lucastheis.github.io/cmt/>}. The training procedure
-	returns a dictionary containing the trained models, and things needed for handling
-	and preprocessing calcium traces.
+    For an explanation on the model and training parameters, please see the
+    U{CMT documentation<http://lucastheis.github.io/cmt/>}. The training procedure
+    returns a dictionary containing the trained models, and things needed for handling
+    and preprocessing calcium traces.
 
-		>>> results['models']
-		>>> results['pca']
-		>>> results['input_mask']
-		>>> results['output_mask']
+        >>> results['models']
+        >>> results['pca']
+        >>> results['input_mask']
+        >>> results['output_mask']
 
-	@see: L{predict<c2s.predict>}
+    @see: L{predict<c2s.predict>}
 
-	@type  data: list
-	@param data: list of dictionaries containig calcium/fluorescence traces
+    @type  data: list
+    @param data: list of dictionaries containig calcium/fluorescence traces
 
-	@type  num_valid: int
-	@param num_valid: number of cells used for early stopping based on a validation set
+    @type  num_valid: int
+    @param num_valid: number of cells used for early stopping based on a validation set
 
-	@type  num_models: int
-	@param num_models: to counter local optima and other randomness, multiple models can be trained
+    @type  num_models: int
+    @param num_models: to counter local optima and other randomness, multiple models can be trained
 
-	@type  var_explained: float
-	@param var_explained: controls the number of principal components used to represent calcium window
+    @type  var_explained: float
+    @param var_explained: controls the number of principal components used to represent calcium window
 
-	@type  window_length: int
-	@param window_length: size of calcium window used as input to STM (in milliseconds)
+    @type  window_length: int
+    @param window_length: size of calcium window used as input to STM (in milliseconds)
 
-	@type  finetune: bool
-	@param finetune: if True, replace nonlinearity with BlobNonlinearity in second optimization step
+    @type  finetune: bool
+    @param finetune: if True, replace nonlinearity with BlobNonlinearity in second optimization step
 
-	@type  keep_all: bool
-	@param keep_all: if False, only keep the best of all trained models
+    @type  keep_all: bool
+    @param keep_all: if False, only keep the best of all trained models
 
-	@type  regularize: float
-	@param regularize: strength with which model filters are regularized for smoothness
+    @type  regularize: float
+    @param regularize: strength with which model filters are regularized for smoothness
 
-	@rtype: dict
-	@return: dictionary containing trained models and things needed for preprocessing
-	"""
+    @rtype: dict
+    @return: dictionary containing trained models and things needed for preprocessing
+    """
 
-	model_parameters.setdefault('num_components', 3)
-	model_parameters.setdefault('num_features', 2)
-	model_parameters.setdefault('nonlinearity', ExponentialFunction)
-	model_parameters.setdefault('distribution', Poisson)
+    model_parameters.setdefault('num_components', 3)
+    model_parameters.setdefault('num_features', 2)
+    model_parameters.setdefault('nonlinearity', ExponentialFunction)
+    model_parameters.setdefault('distribution', Poisson)
 
-	training_parameters.setdefault('max_iter', 3000)
-	training_parameters.setdefault('val_iter', 1)
-	training_parameters.setdefault('val_look_ahead', 100)
-	training_parameters.setdefault('threshold', 1e-9)
+    training_parameters.setdefault('max_iter', 3000)
+    training_parameters.setdefault('val_iter', 1)
+    training_parameters.setdefault('val_look_ahead', 100)
+    training_parameters.setdefault('threshold', 1e-9)
 
-	# turn milliseconds into bins
-	window_length = int(ceil(window_length / 1000. * data[0]['fps']) + .5) # bins
+    # turn milliseconds into bins
+    window_length = int(ceil(window_length / 1000. * data[0]['fps']) + .5)  # bins
 
-	input_mask = zeros([2, window_length], dtype='bool')
-	input_mask[0] = True
+    input_mask = zeros([2, window_length], dtype='bool')
+    input_mask[0] = True
 
-	output_mask = zeros([2, window_length], dtype='bool')
-	output_mask[1, window_length / 2] = True
+    output_mask = zeros([2, window_length], dtype='bool')
+    output_mask[1, window_length / 2] = True
 
-	if verbosity > 0:
-		print('Extracting inputs and outputs...')
+    if verbosity > 0:
+        print('Extracting inputs and outputs...')
 
-	for entry in data:
-		# extract windows from fluorescence trace and corresponding spike counts
-		entry['inputs'], entry['outputs'] = generate_data_from_image(
-			vstack([entry['calcium'], entry['spikes']]), input_mask, output_mask)
+    for entry in data:
+        # extract windows from fluorescence trace and corresponding spike counts
+        entry['inputs'], entry['outputs'] = generate_data_from_image(
+            vstack([entry['calcium'], entry['spikes']]), input_mask, output_mask)
 
-	inputs = hstack(entry['inputs'] for entry in data)
+    inputs = hstack(entry['inputs'] for entry in data)
 
-	if verbosity > 0:
-		print('Performing PCA...')
+    if verbosity > 0:
+        print('Performing PCA...')
 
-	pca = PCATransform(inputs, var_explained=var_explained)
+    pca = PCATransform(inputs, var_explained=var_explained)
 
-	if verbosity > 0:
-		print('Reducing dimensionality of data...')
+    if verbosity > 0:
+        print('Reducing dimensionality of data...')
 
-	for entry in data:
-		entry['inputs'] = pca(entry['inputs'])
+    for entry in data:
+        entry['inputs'] = pca(entry['inputs'])
 
-	models = []
+    models = []
 
-	for _ in range(num_models):
-		if verbosity > 0:
-			print('Training STM...')
+    for _ in range(num_models):
+        if verbosity > 0:
+            print('Training STM...')
 
-		model = STM(
-			dim_in_nonlinear=pca.dim_in_pre,
-			dim_in_linear=0,
-			**model_parameters)
+        model = STM(
+            dim_in_nonlinear=pca.dim_in_pre,
+            dim_in_linear=0,
+            **model_parameters)
 
-		if num_valid > 0:
-			idx = random_select(num_valid, len(data))
+        if num_valid > 0:
+            idx = random_select(num_valid, len(data))
 
-			inputs_train  = hstack(entry['inputs']  for k, entry in enumerate(data) if k in idx)
-			inputs_valid  = hstack(entry['inputs']  for k, entry in enumerate(data) if k not in idx)
-			outputs_train = hstack(entry['outputs'] for k, entry in enumerate(data) if k in idx)
-			outputs_valid = hstack(entry['outputs'] for k, entry in enumerate(data) if k not in idx)
+            inputs_train = hstack(entry['inputs'] for k, entry in enumerate(data) if k in idx)
+            inputs_valid = hstack(entry['inputs'] for k, entry in enumerate(data) if k not in idx)
+            outputs_train = hstack(entry['outputs'] for k, entry in enumerate(data) if k in idx)
+            outputs_valid = hstack(entry['outputs'] for k, entry in enumerate(data) if k not in idx)
 
-			inputs_outputs = (inputs_train, outputs_train, inputs_valid, outputs_valid)
-		else:
-			inputs  = hstack(entry['inputs'] for entry in data)
-			outputs = hstack(entry['outputs'] for entry in data)
+            inputs_outputs = (inputs_train, outputs_train, inputs_valid, outputs_valid)
+        else:
+            inputs = hstack(entry['inputs'] for entry in data)
+            outputs = hstack(entry['outputs'] for entry in data)
 
-			inputs_outputs = (inputs, outputs)
+            inputs_outputs = (inputs, outputs)
 
-		if regularize > 0.:
-			transform = eye(pca.dim_in) \
-				- eye(pca.dim_in, pca.dim_in,  1) / 2. \
-				- eye(pca.dim_in, pca.dim_in, -1) / 2.
-			transform = dot(transform, pca.pre_in.T)
+        if regularize > 0.:
+            transform = eye(pca.dim_in) \
+                        - eye(pca.dim_in, pca.dim_in, 1) / 2. \
+                        - eye(pca.dim_in, pca.dim_in, -1) / 2.
+            transform = dot(transform, pca.pre_in.T)
 
-			training_parameters['regularize_predictors'] = {
-				'strength': regularize,
-				'transform': transform,
-				'norm': 'L1'}
-			training_parameters['regularize_features'] = {
-				'strength': regularize / 10.,
-				'transform': transform,
-				'norm': 'L1'}
+            training_parameters['regularize_predictors'] = {
+                'strength': regularize,
+                'transform': transform,
+                'norm': 'L1'}
+            training_parameters['regularize_features'] = {
+                'strength': regularize / 10.,
+                'transform': transform,
+                'norm': 'L1'}
 
-		# train model
-		model.train(*inputs_outputs, parameters=training_parameters)
+        # train model
+        model.train(*inputs_outputs, parameters=training_parameters)
 
-		if finetune:
-			if verbosity > 0:
-				print('Finetuning STM...')
+        if finetune:
+            if verbosity > 0:
+                print('Finetuning STM...')
 
-			# use flexible nonlinearity
-			model.nonlinearity = BlobNonlinearity(num_components=3)
+            # use flexible nonlinearity
+            model.nonlinearity = BlobNonlinearity(num_components=3)
 
-			# train only nonlinearity
-			training_parameters_copy = copy(training_parameters)
-			training_parameters_copy['train_predictors'] = False
-			training_parameters_copy['train_biases'] = False
-			training_parameters_copy['train_features'] = False
-			training_parameters_copy['train_weights'] = False
-			training_parameters_copy['train_nonlinearity'] = True
-			model.train(*inputs_outputs, parameters=training_parameters_copy)
+            # train only nonlinearity
+            training_parameters_copy = copy(training_parameters)
+            training_parameters_copy['train_predictors'] = False
+            training_parameters_copy['train_biases'] = False
+            training_parameters_copy['train_features'] = False
+            training_parameters_copy['train_weights'] = False
+            training_parameters_copy['train_nonlinearity'] = True
+            model.train(*inputs_outputs, parameters=training_parameters_copy)
 
-			# train all parameters jointly
-			training_parameters_copy = copy(training_parameters)
-			training_parameters_copy['train_nonlinearity'] = True
-			model.train(*inputs_outputs, parameters=training_parameters_copy)
+            # train all parameters jointly
+            training_parameters_copy = copy(training_parameters)
+            training_parameters_copy['train_nonlinearity'] = True
+            model.train(*inputs_outputs, parameters=training_parameters_copy)
 
-		models.append(model)
+        models.append(model)
 
-	if not keep_all:
-		if verbosity > 0:
-			print('Only keep STM with best performance...')
+    if not keep_all:
+        if verbosity > 0:
+            print('Only keep STM with best performance...')
 
-		inputs = hstack(entry['inputs'] for entry in data)
-		outputs = hstack(entry['outputs'] for entry in data)
+        inputs = hstack(entry['inputs'] for entry in data)
+        outputs = hstack(entry['outputs'] for entry in data)
 
-		# compute negativ log-likelihoods
-		logloss = []
-		for model in models:
-			logloss.append(model.evaluate(inputs, outputs))
+        # compute negativ log-likelihoods
+        logloss = []
+        for model in models:
+            logloss.append(model.evaluate(inputs, outputs))
 
-		# pick best model
-		models = [models[argmin(logloss)]]
+        # pick best model
+        models = [models[argmin(logloss)]]
 
-	return {
-		'pca': pca,
-		'input_mask': input_mask,
-		'output_mask': output_mask,
-		'models': models}
-
+    return {
+        'pca': pca,
+        'input_mask': input_mask,
+        'output_mask': output_mask,
+        'models': models}
 
 
 def predict(data, results=None, max_spikes_per_sec=1000., verbosity=1):
-	"""
-	Predicts firing rates from calcium traces using spiking neuron models.
+    """
+    Predicts firing rates from calcium traces using spiking neuron models.
 
-	If no model is specified via C{results}, a default model is used which was trained
-	on two datasets of V1 recordings of mice (dataset 1 and 2 of Theis et al., 2014).
+    If no model is specified via C{results}, a default model is used which was trained
+    on two datasets of V1 recordings of mice (dataset 1 and 2 of Theis et al., 2014).
 
-	@type  data: list
-	@param data: list of dictionaries containing calcium/fluorescence traces
+    @type  data: list
+    @param data: list of dictionaries containing calcium/fluorescence traces
 
-	@type  results: dict/None
-	@param results: dictionary containing results of training procedure
+    @type  results: dict/None
+    @param results: dictionary containing results of training procedure
 
-	@type  max_spikes_per_sec: float
-	@param max_spikes_per_sec: prevents unreasonable spike count predictions
+    @type  max_spikes_per_sec: float
+    @param max_spikes_per_sec: prevents unreasonable spike count predictions
 
-	@type  verbosity: int
-	@param verbosity: if positive, print messages indicating progress
+    @type  verbosity: int
+    @param verbosity: if positive, print messages indicating progress
 
-	@rtype: list
-	@return: returns a list of dictionaries like C{data} but with added predictions
-	"""
+    @rtype: list
+    @return: returns a list of dictionaries like C{data} but with added predictions
+    """
 
-	if type(data) is dict:
-		data = [data]
-	if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
-		data = [{'calcium': data}]
-	if results is None:
-		results = loads(b64decode(DEFAULT_MODEL))
+    if type(data) is dict:
+        data = [data]
+    if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
+        data = [{'calcium': data}]
+    if results is None:
+        if PYTHON3:
+            results = loads(b64decode(DEFAULT_MODEL), encoding='latin1')
+        else:
+            results = loads(b64decode(DEFAULT_MODEL))
 
-	# create copies of dictionaries (doesn't create copies of actual data arrays)
-	data = [copy(entry) for entry in data]
 
-	for entry in data:
-		# extract windows from fluorescence trace and reduce dimensionality
-		entry['inputs'] = extract_windows(
-			entry['calcium'], sum(results['input_mask'][0]))
-		entry['inputs'] = results['pca'](entry['inputs'])
+    # create copies of dictionaries (doesn't create copies of actual data arrays)
+    data = [copy(entry) for entry in data]
 
-	pad_left  = int(where(results['output_mask'][1])[0] + .5)
-	pad_right = results['output_mask'].shape[1] - pad_left - 1
+    for entry in data:
+        # extract windows from fluorescence trace and reduce dimensionality
+        entry['inputs'] = extract_windows(
+            entry['calcium'], sum(results['input_mask'][0]))
+        entry['inputs'] = results['pca'](entry['inputs'])
 
-	for k, entry in enumerate(data):
-		if verbosity > 0:
-			print('Predicting cell {0}...'.format(k))
+    pad_left = int(where(results['output_mask'][1])[0] + .5)
+    pad_right = results['output_mask'].shape[1] - pad_left - 1
 
-		max_spikes = max_spikes_per_sec / float(entry['fps'])
+    for k, entry in enumerate(data):
+        if verbosity > 0:
+            print('Predicting cell {0}...'.format(k))
 
-		predictions = []
-		for model in results['models']:
-			# compute conditional expectation
-			pred = model.predict(entry['inputs']).ravel()
-			pred[pred > max_spikes] = max_spikes
-			predictions.append(pred)
+        max_spikes = max_spikes_per_sec / float(entry['fps'])
 
-		# average predicted firing rate
-		avg = mean(asarray(gmean(predictions, 0)))
+        predictions = []
+        for model in results['models']:
+            # compute conditional expectation
+            pred = model.predict(entry['inputs']).ravel()
+            pred[pred > max_spikes] = max_spikes
+            predictions.append(pred)
 
-		entry['predictions'] = hstack([
-			zeros(pad_left) + avg,
-			asarray(gmean(predictions, 0)),
-			zeros(pad_right) + avg]).reshape(1, -1)
+        # average predicted firing rate
+        avg = mean(asarray(gmean(predictions, 0)))
 
-		# inputs no longer needed
-		del entry['inputs']
+        entry['predictions'] = hstack([
+            zeros(pad_left) + avg,
+            asarray(gmean(predictions, 0)),
+            zeros(pad_right) + avg]).reshape(1, -1)
 
-	return data
+        # inputs no longer needed
+        del entry['inputs']
 
+    return data
 
 
 def evaluate(data, method='corr', **kwargs):
-	"""
-	Evaluates predictions using either Pearson's correlation, log-likelihood, information rates,
-	or area under the ROC curve.
+    """
+    Evaluates predictions using either Pearson's correlation, log-likelihood, information rates,
+    or area under the ROC curve.
 
-	@type  data: list
-	@param data: list of dictionaries as produced by L{predict<c2s.predict>}
+    @type  data: list
+    @param data: list of dictionaries as produced by L{predict<c2s.predict>}
 
-	@type  method: string
-	@param method: either 'loglik', 'info', 'corr', or 'auc' (default: 'corr')
+    @type  method: string
+    @param method: either 'loglik', 'info', 'corr', or 'auc' (default: 'corr')
 
-	@type  downsampling: int
-	@param downsampling: downsample spike trains and predictions by this factor before evaluation (default: 1)
+    @type  downsampling: int
+    @param downsampling: downsample spike trains and predictions by this factor before evaluation (default: 1)
 
-	@type  optimize: bool
-	@param optimize: find optimal point-wise monotonic nonlinearity before evaluation of log-likelihood (default: True)
+    @type  optimize: bool
+    @param optimize: find optimal point-wise monotonic nonlinearity before evaluation of log-likelihood (default: True)
 
-	@type  regularize: int
-	@param regularize: regularize point-wise monotonic nonlinearity to be smooth (default: 5e-3)
+    @type  regularize: int
+    @param regularize: regularize point-wise monotonic nonlinearity to be smooth (default: 5e-3)
 
-	@type  verbosity: int
-	@param verbosity: controls output during optimization of nonlinearity (default: 2)
+    @type  verbosity: int
+    @param verbosity: controls output during optimization of nonlinearity (default: 2)
 
-	@type  return_all: bool
-	@param return_all: if true, return additional information and not just performance (default: False)
+    @type  return_all: bool
+    @param return_all: if true, return additional information and not just performance (default: False)
 
-	@rtype: ndarray
-	@return: a value for each cell
-	"""
+    @rtype: ndarray
+    @return: a value for each cell
+    """
 
-	kwargs.setdefault('downsampling', 1)
-	kwargs.setdefault('num_support', 10)
-	kwargs.setdefault('regularize', 5e-8)
-	kwargs.setdefault('optimize', True)
-	kwargs.setdefault('return_all', False)
-	kwargs.setdefault('verbosity', 2)
+    kwargs.setdefault('downsampling', 1)
+    kwargs.setdefault('num_support', 10)
+    kwargs.setdefault('regularize', 5e-8)
+    kwargs.setdefault('optimize', True)
+    kwargs.setdefault('return_all', False)
+    kwargs.setdefault('verbosity', 2)
 
-	if 'downsample' in kwargs:
-		print('Did you mean `downsampling`?')
-		return
+    if 'downsample' in kwargs:
+        print('Did you mean `downsampling`?')
+        return
 
-	if 'regularization' in kwargs:
-		print('Did you mean `regularize`?')
-		return
+    if 'regularization' in kwargs:
+        print('Did you mean `regularize`?')
+        return
 
-	if method.lower().startswith('c'):
-		corr = []
+    if method.lower().startswith('c'):
+        corr = []
 
-		# compute correlations
-		for entry in data:
-			corr.append(
-				corrcoef(
-					downsample(entry['predictions'], kwargs['downsampling']).ravel(),
-					downsample(entry['spikes'], kwargs['downsampling']).ravel())[0, 1])
+        # compute correlations
+        for entry in data:
+            corr.append(
+                corrcoef(
+                    downsample(entry['predictions'], kwargs['downsampling']).ravel(),
+                    downsample(entry['spikes'], kwargs['downsampling']).ravel())[0, 1])
 
-		return array(corr)
+        return array(corr)
 
-	elif method.lower().startswith('a'):
-		auc = []
+    elif method.lower().startswith('a'):
+        auc = []
 
-		# compute area under ROC curve
-		for entry in data:
-			# downsample firing rates
-			predictions = downsample(entry['predictions'], kwargs['downsampling']).ravel()
-			spikes = array(downsample(entry['spikes'], kwargs['downsampling']).ravel() + .5, dtype=int)
+        # compute area under ROC curve
+        for entry in data:
+            # downsample firing rates
+            predictions = downsample(entry['predictions'], kwargs['downsampling']).ravel()
+            spikes = array(downsample(entry['spikes'], kwargs['downsampling']).ravel() + .5, dtype=int)
 
-			# marks bins containing spikes
-			mask = spikes > .5
+            # marks bins containing spikes
+            mask = spikes > .5
 
-			# collect positive and negative examples
-			neg = predictions[-mask]
-			pos = []
+            # collect positive and negative examples
+            neg = predictions[-mask]
+            pos = []
 
-			# this loop is necessary because any bin can contain more than one spike
-			while any(mask):
-				pos.append(predictions[mask])
-				spikes -= 1
-				mask = spikes > .5
-			pos = hstack(pos)
+            # this loop is necessary because any bin can contain more than one spike
+            while any(mask):
+                pos.append(predictions[mask])
+                spikes -= 1
+                mask = spikes > .5
+            pos = hstack(pos)
 
-			# roc(pos, neg) only works with floats
-			neg = asarray(neg, dtype=float)
-			pos = asarray(pos, dtype=float)
+            # roc(pos, neg) only works with floats
+            neg = asarray(neg, dtype=float)
+            pos = asarray(pos, dtype=float)
 
-			try:
-				# compute area under curve
-				auc.append(roc(pos, neg)[0])
-			except NameError:
-				print('You need to compile `roc.pyx` with cython first.')
-				sys.exit(1)
+            try:
+                # compute area under curve
+                auc.append(roc(pos, neg)[0])
+            except NameError:
+                print('You need to compile `roc.pyx` with cython first.')
+                sys.exit(1)
 
-		return array(auc)
+        return array(auc)
 
-	else:
-		# downsample predictions and spike trains
-		spikes = [downsample(entry['spikes'], kwargs['downsampling']).ravel() for entry in data]
-		predictions = [downsample(entry['predictions'], kwargs['downsampling']).ravel() for entry in data]
+    else:
+        # downsample predictions and spike trains
+        spikes = [downsample(entry['spikes'], kwargs['downsampling']).ravel() for entry in data]
+        predictions = [downsample(entry['predictions'], kwargs['downsampling']).ravel() for entry in data]
 
-		if kwargs['optimize']:
-			# find optimal point-wise monotonic function
-			f = optimize_predictions(
-				hstack(predictions),
-				hstack(spikes),
-				kwargs['num_support'],
-				kwargs['regularize'],
-				kwargs['verbosity'])
-		else:
-			f = lambda x: x
-			f.x = [min(hstack(predictions)), max(hstack(predictions))]
-			f.y = f.x
+        if kwargs['optimize']:
+            # find optimal point-wise monotonic function
+            f = optimize_predictions(
+                hstack(predictions),
+                hstack(spikes),
+                kwargs['num_support'],
+                kwargs['regularize'],
+                kwargs['verbosity'])
+        else:
+            f = lambda x: x
+            f.x = [min(hstack(predictions)), max(hstack(predictions))]
+            f.y = f.x
 
-		# for conversion into bit/s
-		factor = 1. / kwargs['downsampling'] / log(2.)
+        # for conversion into bit/s
+        factor = 1. / kwargs['downsampling'] / log(2.)
 
-		# average firing rate (Hz) over all cells
-		firing_rate = mean(hstack([s * data[k]['fps'] for k, s in enumerate(spikes)]))
+        # average firing rate (Hz) over all cells
+        firing_rate = mean(hstack([s * data[k]['fps'] for k, s in enumerate(spikes)]))
 
-		# estimate log-likelihood and marginal entropies
-		loglik, entropy = [], []
-		for k in range(len(data)):
-			loglik.append(mean(poisson.logpmf(spikes[k], f(predictions[k]))) * data[k]['fps'] * factor)
-			entropy.append(-mean(poisson.logpmf(spikes[k], firing_rate / data[k]['fps'])) * data[k]['fps'] * factor)
+        # estimate log-likelihood and marginal entropies
+        loglik, entropy = [], []
+        for k in range(len(data)):
+            loglik.append(mean(poisson.logpmf(spikes[k], f(predictions[k]))) * data[k]['fps'] * factor)
+            entropy.append(-mean(poisson.logpmf(spikes[k], firing_rate / data[k]['fps'])) * data[k]['fps'] * factor)
 
-		if method.lower().startswith('l'):
-			if kwargs['return_all']:
-				return array(loglik), array(entropy), f
-			else:
-				# return log-likelihood
-				return array(loglik)
-		else:
-			# return information rates
-			return array(loglik) + array(entropy)
-
+        if method.lower().startswith('l'):
+            if kwargs['return_all']:
+                return array(loglik), array(entropy), f
+            else:
+                # return log-likelihood
+                return array(loglik)
+        else:
+            # return information rates
+            return array(loglik) + array(entropy)
 
 
 def optimize_predictions(predictions, spikes, num_support=10, regularize=5e-8, verbosity=1):
-	"""
-	Fits a monotonic piecewise linear function to maximize the Poisson likelihood of
-	firing rate predictions interpreted as Poisson rate parameter.
+    """
+    Fits a monotonic piecewise linear function to maximize the Poisson likelihood of
+    firing rate predictions interpreted as Poisson rate parameter.
 
-	@type  predictions: array_like
-	@param predictions: predicted firing rates
+    @type  predictions: array_like
+    @param predictions: predicted firing rates
 
-	@type  spikes: array_like
-	@param spikes: true spike counts
+    @type  spikes: array_like
+    @param spikes: true spike counts
 
-	@type  num_support: int
-	@param num_support: number of support points of the piecewise linear function
+    @type  num_support: int
+    @param num_support: number of support points of the piecewise linear function
 
-	@type  regularize: float
-	@param regularize: strength of regularization for smoothness
+    @type  regularize: float
+    @param regularize: strength of regularization for smoothness
 
-	@rtype: interp1d
-	@return: a piecewise monotonic function
-	"""
+    @rtype: interp1d
+    @return: a piecewise monotonic function
+    """
 
-	if num_support < 2:
-		raise ValueError('`num_support` should be at least 2.')
+    if num_support < 2:
+        raise ValueError('`num_support` should be at least 2.')
 
-	if any(predictions < 0.):
-		warn('Some firing rate predictions are smaller than zero.')
-		predictions[predictions < 0.] = 0.
+    if any(predictions < 0.):
+        warn('Some firing rate predictions are smaller than zero.')
+        predictions[predictions < 0.] = 0.
 
-	if any(isnan(predictions)):
-		warn('Some predictions are NaN.')
-		predictions[isnan(predictions)] = 0.
+    if any(isnan(predictions)):
+        warn('Some predictions are NaN.')
+        predictions[isnan(predictions)] = 0.
 
-	# support points of piece-wise linear function
-	if num_support > 2:
-		F = predictions
-		F = F[F > (max(F) - min(F)) / 100.]
-		x = list(percentile(F, range(0, 101, num_support)[1:-1]))
-		x = asarray([0.] + x + [max(F)])
+    # support points of piece-wise linear function
+    if num_support > 2:
+        F = predictions
+        F = F[F > (max(F) - min(F)) / 100.]
+        x = list(percentile(F, range(0, 101, num_support)[1:-1]))
+        x = asarray([0.] + x + [max(F)])
 
-		for i in range(len(x) - 1):
-			if x[i + 1] - x[i] < 1e-6:
-				x[i + 1] = x[i] + 1e-6
-	else:
-		x = asarray([min(predictions), max(predictions)])
+        for i in range(len(x) - 1):
+            if x[i + 1] - x[i] < 1e-6:
+                x[i + 1] = x[i] + 1e-6
+    else:
+        x = asarray([min(predictions), max(predictions)])
 
-		if x[1] - x[0] < 1e-6:
-			x[1] += 1e-6
+        if x[1] - x[0] < 1e-6:
+            x[1] += 1e-6
 
-	def objf(y):
-		# construct piece-wise linear function
-		f = interp1d(x, y)
+    def objf(y):
+        # construct piece-wise linear function
+        f = interp1d(x, y)
 
-		# compute predicted firing rates
-		l = f(predictions) + 1e-16
+        # compute predicted firing rates
+        l = f(predictions) + 1e-16
 
-		# compute negative log-likelihood (ignoring constants)
-		K = mean(l - spikes * log(l))
+        # compute negative log-likelihood (ignoring constants)
+        K = mean(l - spikes * log(l))
 
-		# regularize curvature
-		z = (x[2:] - x[:-2]) / 2.
-		K = K + regularize * sum(square(diff(diff(y) / diff(x)) / z))
+        # regularize curvature
+        z = (x[2:] - x[:-2]) / 2.
+        K = K + regularize * sum(square(diff(diff(y) / diff(x)) / z))
 
-		return K
+        return K
 
-	class MonotonicityConstraint:
-		def __init__(self, i):
-			self.i = i
+    class MonotonicityConstraint:
+        def __init__(self, i):
+            self.i = i
 
-		def __call__(self, y):
-			return y[self.i] - y[self.i - 1]
+        def __call__(self, y):
+            return y[self.i] - y[self.i - 1]
 
-	# monotonicity and non-negativity constraint
-	constraints = [{'type': 'ineq', 'fun': MonotonicityConstraint(i)} for i in range(1, x.size)]
-	constraints.extend([{'type': 'ineq', 'fun': lambda y: y[0]}])
+    # monotonicity and non-negativity constraint
+    constraints = [{'type': 'ineq', 'fun': MonotonicityConstraint(i)} for i in range(1, x.size)]
+    constraints.extend([{'type': 'ineq', 'fun': lambda y: y[0]}])
 
-	# fit monotonic function
-	settings = seterr(invalid='ignore')
-	res = minimize(
-		fun=objf,
-		x0=x + 1e-6,
-		method='SLSQP',
-		tol=1e-9,
-		constraints=constraints,
-		options={'disp': 1, 'iprint': verbosity})
-	seterr(invalid=settings['invalid'])
+    # fit monotonic function
+    settings = seterr(invalid='ignore')
+    res = minimize(
+        fun=objf,
+        x0=x + 1e-6,
+        method='SLSQP',
+        tol=1e-9,
+        constraints=constraints,
+        options={'disp': 1, 'iprint': verbosity})
+    seterr(invalid=settings['invalid'])
 
-	# construct monotonic piecewise linear function
-	return interp1d(x, res.x, bounds_error=False, fill_value=res.x[-1])
-
+    # construct monotonic piecewise linear function
+    return interp1d(x, res.x, bounds_error=False, fill_value=res.x[-1])
 
 
 def robust_linear_regression(x, y, num_scales=3, max_iter=1000):
-	"""
-	Performs linear regression with Gaussian scale mixture residuals.
+    """
+    Performs linear regression with Gaussian scale mixture residuals.
 
-	$$y = ax + b + \\varepsilon,$$
+    $$y = ax + b + \\varepsilon,$$
 
-	where $\\varepsilon$ is assumed to be Gaussian scale mixture distributed.
+    where $\\varepsilon$ is assumed to be Gaussian scale mixture distributed.
 
-	@type  x: array_like
-	@param x: list of one-dimensional inputs
+    @type  x: array_like
+    @param x: list of one-dimensional inputs
 
-	@type  y: array_like
-	@param y: list of one-dimensional outputs
+    @type  y: array_like
+    @param y: list of one-dimensional outputs
 
-	@type  num_scales: int
-	@param num_scales: number of Gaussian scale mixture components
+    @type  num_scales: int
+    @param num_scales: number of Gaussian scale mixture components
 
-	@type  max_iter: int
-	@param max_iter: number of optimization steps in parameter search
+    @type  max_iter: int
+    @param max_iter: number of optimization steps in parameter search
 
-	@rtype: tuple
-	@return: slope and y-intercept
-	"""
+    @rtype: tuple
+    @return: slope and y-intercept
+    """
 
-	x = asarray(x).reshape(1, -1)
-	y = asarray(y).reshape(1, -1)
+    x = asarray(x).reshape(1, -1)
+    y = asarray(y).reshape(1, -1)
 
-	# preprocess inputs
-	m = mean(x)
-	s = std(x)
+    # preprocess inputs
+    m = mean(x)
+    s = std(x)
 
-	x = (x - m) / s
+    x = (x - m) / s
 
-	# preprocess outputs using simple linear regression
-	C = cov(x, y)
-	a = C[0, 1] / C[0, 0]
-	b = mean(y) - a * mean(x)
+    # preprocess outputs using simple linear regression
+    C = cov(x, y)
+    a = C[0, 1] / C[0, 0]
+    b = mean(y) - a * mean(x)
 
-	y = y - (a * x + b)
+    y = y - (a * x + b)
 
-	# robust linear regression
-	model = MCGSM(
-		dim_in=1,
-		dim_out=1,
-		num_components=1,
-		num_scales=num_scales,
-		num_features=0)
+    # robust linear regression
+    model = MCGSM(
+        dim_in=1,
+        dim_out=1,
+        num_components=1,
+        num_scales=num_scales,
+        num_features=0)
 
-	model.initialize(x, y)
-	model.train(x, y, parameters={
-		'train_means': True,
-		'max_iter': max_iter})
+    model.initialize(x, y)
+    model.train(x, y, parameters={
+        'train_means': True,
+        'max_iter': max_iter})
 
-	a = (a + float(model.predictors[0])) / s
-	b = (b + float(model.means)) - a * m
+    a = (a + float(model.predictors[0])) / s
+    b = (b + float(model.means)) - a * m
 
-	return a, b
-
+    return a, b
 
 
 def percentile_filter(x, window_length, perc=5):
-	"""
-	For each point in a signal, computes a percentile from a window surrounding it.
+    """
+    For each point in a signal, computes a percentile from a window surrounding it.
 
-	@type  window_length: int
-	@param window_length: length of window in bins
+    @type  window_length: int
+    @param window_length: length of window in bins
 
-	@type  perc: int
-	@param perc: which percentile to compute
+    @type  perc: int
+    @param perc: which percentile to compute
 
-	@rtype: ndarray
-	@return: array of the same size as C{x} containing the percentiles
-	"""
+    @rtype: ndarray
+    @return: array of the same size as C{x} containing the percentiles
+    """
 
-	shape = x.shape
-	x = x.ravel()
-	y = empty(x.size)
-	d = window_length // 2 + 1
+    shape = x.shape
+    x = x.ravel()
+    y = empty(x.size)
+    d = window_length // 2 + 1
 
-	for t in range(x.size):
-		fr = max([t - d + 1, 0])
-		to = t + d
-		y[t] = percentile(x[fr:to], perc)
+    for t in range(x.size):
+        fr = max([t - d + 1, 0])
+        to = t + d
+        y[t] = percentile(x[fr:to], perc)
 
-	return y.reshape(shape)
-
+    return y.reshape(shape)
 
 
 def downsample(signal, factor):
-	"""
-	Downsample signal by averaging neighboring values.
+    """
+    Downsample signal by averaging neighboring values.
 
-	@type  signal: array_like
-	@param signal: one-dimensional signal to be downsampled
+    @type  signal: array_like
+    @param signal: one-dimensional signal to be downsampled
 
-	@type  factor: int
-	@param factor: this many neighboring values are averaged
+    @type  factor: int
+    @param factor: this many neighboring values are averaged
 
-	@rtype: ndarray
-	@return: downsampled signal
-	"""
+    @rtype: ndarray
+    @return: downsampled signal
+    """
 
-	if factor < 2:
-		return asarray(signal)
-	return convolve(asarray(signal).ravel(), ones(factor), 'valid')[::factor]
-
+    if factor < 2:
+        return asarray(signal)
+    return convolve(asarray(signal).ravel(), ones(factor), 'valid')[::factor]
 
 
 def responses(data, results, verbosity=0):
-	"""
-	Compute nonlinear component responses of STM to calcium.
+    """
+    Compute nonlinear component responses of STM to calcium.
 
-	@type  data: list
-	@param data: list of dictionaries containing calcium/fluorescence traces
+    @type  data: list
+    @param data: list of dictionaries containing calcium/fluorescence traces
 
-	@type  results: dict
-	@param results: dictionary containing results of training procedure
+    @type  results: dict
+    @param results: dictionary containing results of training procedure
 
-	@type  verbosity: int
-	@param verbosity: if positive, print messages indicating progress
+    @type  verbosity: int
+    @param verbosity: if positive, print messages indicating progress
 
-	@rtype: list
-	@return: list of dictionaries like C{data}, but with added responses
-	"""
+    @rtype: list
+    @return: list of dictionaries like C{data}, but with added responses
+    """
 
-	if type(data) is dict:
-		data = [data]
-	if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
-		data = [{'calcium': data}]
+    if type(data) is dict:
+        data = [data]
+    if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
+        data = [{'calcium': data}]
 
-	for entry in data:
-		# extract windows from fluorescence trace and reduce dimensionality
-		entry['inputs'] = extract_windows(
-			entry['calcium'], sum(results['input_mask'][0]))
-		entry['inputs'] = results['pca'](entry['inputs'])
+    for entry in data:
+        # extract windows from fluorescence trace and reduce dimensionality
+        entry['inputs'] = extract_windows(
+            entry['calcium'], sum(results['input_mask'][0]))
+        entry['inputs'] = results['pca'](entry['inputs'])
 
-	pad_left  = int(where(results['output_mask'][1])[0] + .5)
-	pad_right = results['output_mask'].shape[1] - pad_left - 1
+    pad_left = int(where(results['output_mask'][1])[0] + .5)
+    pad_right = results['output_mask'].shape[1] - pad_left - 1
 
-	for k, entry in enumerate(data):
-		if verbosity > 0:
-			print('Computing responses for cell {0}...'.format(k))
+    for k, entry in enumerate(data):
+        if verbosity > 0:
+            print('Computing responses for cell {0}...'.format(k))
 
-		# pick first model
-		if type(results) is STM:
-			model = results
-		else:
-			model = results['models'][0]
+        # pick first model
+        if type(results) is STM:
+            model = results
+        else:
+            model = results['models'][0]
 
-		# compute nonlinear component responses
-		responses = model.nonlinear_responses(entry['inputs'])
+        # compute nonlinear component responses
+        responses = model.nonlinear_responses(entry['inputs'])
 
-		entry['responses'] = hstack([
-			zeros([responses.shape[0], pad_left]),
-			responses,
-			zeros([responses.shape[0], pad_right])])
+        entry['responses'] = hstack([
+            zeros([responses.shape[0], pad_left]),
+            responses,
+            zeros([responses.shape[0], pad_right])])
 
-		# inputs no longer needed
-		del entry['inputs']
+        # inputs no longer needed
+        del entry['inputs']
 
-	return data
-
+    return data
 
 
 def generate_inputs_and_outputs(data, var_explained=95., window_length=1000., pca=None, verbosity=1):
-	"""
-	Extracts input and output windows from calcium and spike traces.
+    """
+    Extracts input and output windows from calcium and spike traces.
 
-	@type  data: list
-	@param data: list of dictionaries containig calcium/fluorescence traces
+    @type  data: list
+    @param data: list of dictionaries containig calcium/fluorescence traces
 
-	@type  var_explained: float
-	@param var_explained: controls the number of principal components used to represent calcium window
+    @type  var_explained: float
+    @param var_explained: controls the number of principal components used to represent calcium window
 
-	@type  window_length: int
-	@param window_length: size of calcium window used as input to STM (in milliseconds)
+    @type  window_length: int
+    @param window_length: size of calcium window used as input to STM (in milliseconds)
 
-	@type  pca: PCATransform
-	@param pca: if given, use results of previous PCA
+    @type  pca: PCATransform
+    @param pca: if given, use results of previous PCA
 
-	@rtype: tuple
-	@return: inputs, outputs and a dictionary containing window masks and PCA results
-	"""
+    @rtype: tuple
+    @return: inputs, outputs and a dictionary containing window masks and PCA results
+    """
 
     # turn milliseconds into bins
-	window_length = int(ceil(window_length / 1000. * data[0]['fps']) + .5) # bins
+    window_length = int(ceil(window_length / 1000. * data[0]['fps']) + .5)  # bins
 
-	input_mask = zeros([2, window_length], dtype='bool')
-	input_mask[0] = True
+    input_mask = zeros([2, window_length], dtype='bool')
+    input_mask[0] = True
 
-	output_mask = zeros([2, window_length], dtype='bool')
-	output_mask[1, window_length / 2] = True
+    output_mask = zeros([2, window_length], dtype='bool')
+    output_mask[1, window_length / 2] = True
 
-	if verbosity > 0:
-		print('Extracting inputs and outputs...')
+    if verbosity > 0:
+        print('Extracting inputs and outputs...')
 
-	for entry in data:
-		# extract windows from fluorescence trace and corresponding spike counts
-		entry['inputs'], entry['outputs'] = generate_data_from_image(
-			vstack([entry['calcium'], entry['spikes']]), input_mask, output_mask)
+    for entry in data:
+        # extract windows from fluorescence trace and corresponding spike counts
+        entry['inputs'], entry['outputs'] = generate_data_from_image(
+            vstack([entry['calcium'], entry['spikes']]), input_mask, output_mask)
 
-	if pca is None:
-		inputs = hstack(entry['inputs'] for entry in data)
+    if pca is None:
+        inputs = hstack(entry['inputs'] for entry in data)
 
-		if verbosity > 0:
-			print('Performing PCA...')
+        if verbosity > 0:
+            print('Performing PCA...')
 
-		pca = PCATransform(inputs, var_explained=var_explained)
+        pca = PCATransform(inputs, var_explained=var_explained)
 
-	if verbosity > 0:
-		print('Reducing dimensionality of data...')
+    if verbosity > 0:
+        print('Reducing dimensionality of data...')
 
-	for entry in data:
-		entry['inputs'] = pca(entry['inputs'])
+    for entry in data:
+        entry['inputs'] = pca(entry['inputs'])
 
-	inputs = hstack(entry['inputs'] for entry in data)
-	outputs = hstack(entry['outputs'] for entry in data)
+    inputs = hstack(entry['inputs'] for entry in data)
+    outputs = hstack(entry['outputs'] for entry in data)
 
-	return inputs, outputs, {
-		'input_mask': input_mask,
-		'output_mask': output_mask,
-		'pca': pca}
-
+    return inputs, outputs, {
+        'input_mask': input_mask,
+        'output_mask': output_mask,
+        'pca': pca}
 
 
 # base64 encoded pickled default model
