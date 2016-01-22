@@ -63,6 +63,8 @@ used when making predictions.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from collections import OrderedDict
+
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
 __author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
@@ -96,6 +98,7 @@ except:
     pass
 
 PYTHON3 = sys.version.startswith('3.')
+
 
 def load_data(filepath):
     """
@@ -475,14 +478,13 @@ def predict(data, results=None, max_spikes_per_sec=1000., verbosity=1):
 
     if type(data) is dict:
         data = [data]
-    if type(data) is not list or (len(data) > 0 and type(data[0]) is not dict):
+    if type(data) is not list or (len(data) > 0 and (type(data[0]) is not dict) and (type(data[0]) is not OrderedDict)):
         data = [{'calcium': data}]
     if results is None:
         if PYTHON3:
             results = loads(b64decode(DEFAULT_MODEL), encoding='latin1')
         else:
             results = loads(b64decode(DEFAULT_MODEL))
-
 
     # create copies of dictionaries (doesn't create copies of actual data arrays)
     data = [copy(entry) for entry in data]
