@@ -77,7 +77,7 @@ from warnings import warn
 from pickle import load, loads
 from numpy import percentile, asarray, arange, zeros, where, repeat, sort, cov, mean, std, ceil
 from numpy import vstack, hstack, argmin, ones, convolve, log, linspace, min, max, square, sum, diff
-from numpy import corrcoef, array, eye, dot, empty, seterr, isnan, any
+from numpy import corrcoef, array, eye, dot, empty, seterr, isnan, any, zeros_like
 from numpy.random import rand
 from scipy.signal import resample
 from scipy.stats import poisson
@@ -172,6 +172,9 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 
     @type  fps: float
     @param fps: desired sampling rate of signals
+
+    @type  filter: float/none
+    @param filter: percentile filter length in seconds
 
     @type  filter: float/None
     @param filter: number of seconds used in percentile filter
@@ -486,38 +489,49 @@ def predict(data, results=None, max_spikes_per_sec=1000., verbosity=1):
         else:
             results = loads(b64decode(DEFAULT_MODEL))
 
+        for entry in data:
+            if 'fps' in entry and abs(entry['fps'] - 100.) > 1.:
+                warn('The default model expects calcium traces sampled at 100 Hz.')
+                break
+
     # create copies of dictionaries (doesn't create copies of actual data arrays)
     data = [copy(entry) for entry in data]
 
     for entry in data:
-        # extract windows from fluorescence trace and reduce dimensionality
-        entry['inputs'] = extract_windows(
-            entry['calcium'], sum(results['input_mask'][0]))
-        entry['inputs'] = results['pca'](entry['inputs'])
+        if entry['calcium'].size < sum(results['input_mask'][0]):
+            warn('Calcium trace shorter than window needed for prediction.')
+            entry['inputs'] = None
+            entry['predictions'] = zeros_like(entry['calcium'])
+        else:
+            # extract windows from fluorescence trace and reduce dimensionality
+            entry['inputs'] = extract_windows(
+                entry['calcium'], sum(results['input_mask'][0]))
+            entry['inputs'] = results['pca'](entry['inputs'])
 
     pad_left = int(where(results['output_mask'][1])[0] + .5)
     pad_right = results['output_mask'].shape[1] - pad_left - 1
 
     for k, entry in enumerate(data):
-        if verbosity > 0:
-            print('Predicting cell {0}...'.format(k))
+        if entry['inputs'] is not None:
+            if verbosity > 0:
+                print('Predicting cell {0}...'.format(k))
 
-        max_spikes = max_spikes_per_sec / float(entry['fps'])
+            max_spikes = max_spikes_per_sec / float(entry['fps'])
 
-        predictions = []
-        for model in results['models']:
-            # compute conditional expectation
-            pred = model.predict(entry['inputs']).ravel()
-            pred[pred > max_spikes] = max_spikes
-            predictions.append(pred)
+            predictions = []
+            for model in results['models']:
+                # compute conditional expectation
+                pred = model.predict(entry['inputs']).ravel()
+                pred[pred > max_spikes] = max_spikes
+                predictions.append(pred)
 
-        # average predicted firing rate
-        avg = mean(asarray(gmean(predictions, 0)))
+            # average predicted firing rate
+            avg = mean(asarray(gmean(predictions, 0)))
 
-        entry['predictions'] = hstack([
-            zeros(pad_left) + avg,
-            asarray(gmean(predictions, 0)),
-            zeros(pad_right) + avg]).reshape(1, -1)
+            entry['predictions'] = hstack([
+                zeros(pad_left) + avg,
+                asarray(gmean(predictions, 0)),
+                zeros(pad_right) + avg]).reshape(1, -1)
 
         # inputs no longer needed
         del entry['inputs']
