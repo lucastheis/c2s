@@ -155,7 +155,7 @@ def load_data(filepath):
         return load(handle)
 
 
-def preprocess(data, fps=100., filter=None, verbosity=0):
+def preprocess(data, fps=100., filter=None, verbosity=0, fps_threshold=.1):
     """
     Normalize calcium traces and spike trains.
 
@@ -181,6 +181,9 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
 
     @type  verbosity: int
     @param verbosity: if positive, print messages indicating progress
+
+    @type  fps_threshold: float
+    @param fps_threshold: only resample if sampling rate differs more than this
 
     @rtype: list
     @return: list of preprocessed recordings
@@ -224,7 +227,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0):
             data[k]['spike_times'] = sort(spike_times).reshape(1, -1)
 
         # normalize sampling rate
-        if fps is not None and fps > 0.:
+        if fps is not None and fps > 0. and abs(data[k]['fps'] - fps) > fps_threshold:
             # number of samples after update of sampling rate
             num_samples = int(float(data[k]['calcium'].size) * fps / data[k]['fps'] + .5)
 
