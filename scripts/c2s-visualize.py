@@ -12,7 +12,6 @@ import sys
 
 from argparse import ArgumentParser
 from pickle import dump
-from scipy.io import savemat
 from numpy import corrcoef, mean, arange, logical_and
 from c2s import load_data, preprocess
 

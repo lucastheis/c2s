@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 from pickle import load, dump
 from scipy.io import savemat
 from c2s import preprocess, load_data
+from c2s.utils import convert
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
@@ -39,7 +40,7 @@ def main(argv):
 	for filepath in args.output:
 		if filepath.lower().endswith('.mat'):
 			# store in MATLAB format
-			savemat(filepath, {'data': data})
+			savemat(filepath, convert({'data': data}))
 		else:
 			with open(filepath, 'w') as handle:
 				dump(data, handle, protocol=2)

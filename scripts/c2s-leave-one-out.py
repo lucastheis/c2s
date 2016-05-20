@@ -16,6 +16,7 @@ from numpy.random import rand, randint
 from cmt.utils import random_select
 from c2s import load_data, train, predict, preprocess
 from c2s.experiment import Experiment
+from c2s.utils import convert
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
@@ -99,7 +100,7 @@ def main(argv):
 
 	# save results
 	if args.output.lower().endswith('.mat'):
-		savemat(args.output, {'data': data})
+		savemat(args.output, convert({'data': data}))
 
 	elif args.output.lower().endswith('.xpck'):
 		experiment['args'] = args

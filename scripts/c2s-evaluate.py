@@ -17,6 +17,7 @@ from pickle import load
 from numpy import mean, min, hstack, asarray, average, unique, ones
 from c2s import evaluate, load_data
 from c2s.experiment import Experiment
+from c2s.utils import convert
 
 def print_traces(result, fps):
 	"""
@@ -203,15 +204,15 @@ def main(argv):
 	if args.output.lower().endswith('.mat'):
 
 		if args.method.lower().startswith('c'):
-			savemat(args.output, {'fps': asarray(fps), 'correlations': asarray(correlations)})
+			savemat(args.output, convert({'fps': asarray(fps), 'correlations': asarray(correlations)}))
 		elif args.method.lower().startswith('a'):
-			savemat(args.output, {'fps': asarray(fps), 'auc': asarray(auc)})
+			savemat(args.output, convert({'fps': asarray(fps), 'auc': asarray(auc)}))
 		else:
-			savemat(args.output, {
+			savemat(args.output, convert({
 				'fps': asarray(fps),
 				'loglik': asarray(loglik),
 				'entropy': asarray(entropy),
-				'info': asarray(loglik) + asarray(entropy)})
+				'info': asarray(loglik) + asarray(entropy)}))
 
 	elif args.output:
 		if os.path.isdir(args.output):
