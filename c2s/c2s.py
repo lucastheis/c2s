@@ -85,11 +85,14 @@ from scipy.stats.mstats import gmean
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy.io import loadmat
-from cmt.models import MCGSM, STM, Poisson
-from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
-from cmt.tools import generate_data_from_image, extract_windows
-from cmt.transforms import PCATransform
-from cmt.utils import random_select
+try:
+	from cmt.models import MCGSM, STM, Poisson
+	from cmt.nonlinear import ExponentialFunction, BlobNonlinearity
+	from cmt.tools import generate_data_from_image, extract_windows
+	from cmt.transforms import PCATransform
+	from cmt.utils import random_select
+except ImportError:
+	warn('Install conditional modeling toolkit (https://github.com/lucastheis/cmt) for full functionality.')
 from .experiment import Experiment
 
 try:
@@ -151,8 +154,13 @@ def load_data(filepath):
 			return data
 		return []
 
-	with open(filepath) as handle:
-		return load(handle)
+	try:
+		with open(filepath) as handle:
+			return load(handle)
+	except UnicodeDecodeError:
+		# Open files saved with Python 2 in Python 3
+		with open(filepath, 'rb') as handle:
+			return load(handle, encoding='latin1')
 
 
 def preprocess(data, fps=100., filter=None, verbosity=0, fps_threshold=.1):
@@ -205,8 +213,7 @@ def preprocess(data, fps=100., filter=None, verbosity=0, fps_threshold=.1):
 			data[k]['calcium'] = data[k]['calcium'] - (a * x + b)
 		else:
 			data[k]['calcium'] = data[k]['calcium'] - \
-								 percentile_filter(data[k]['calcium'], window_length=int(data[k]['fps'] * filter),
-												   perc=5)
+				percentile_filter(data[k]['calcium'], window_length=int(data[k]['fps'] * filter), perc=5)
 
 		# normalize dispersion
 		calcium05 = percentile(data[k]['calcium'], 5)
