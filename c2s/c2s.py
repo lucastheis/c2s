@@ -471,7 +471,7 @@ def predict(data, results=None, max_spikes_per_sec=1000., verbosity=1):
 	Predicts firing rates from calcium traces using spiking neuron models.
 
 	If no model is specified via C{results}, a default model is used which was trained
-	on two datasets of V1 recordings of mice (dataset 1 and 2 of Theis et al., 2014).
+	on many datasets (see Theis et al., 2016).
 
 	@type  data: list
 	@param data: list of dictionaries containing calcium/fluorescence traces
