@@ -260,6 +260,11 @@ def preprocess(data, fps=100., filter=None, verbosity=0, fps_threshold=.1):
 			data[k]['spikes'] = zeros([1, num_samples], dtype='uint16')
 			for t in spike_times:
 				data[k]['spikes'][0, t] += 1
+	
+		# make sure spike trains are row vectors
+		if 'spikes' in data[k]:
+			data[k]['spike_times'] = data[k]['spike_times'].reshape(1, -1)
+			data[k]['spikes'] = data[k]['spikes'].reshape(1, -1)
 
 	return data
 
