@@ -4,7 +4,7 @@ def convert(input):
 	"""
 
 	if isinstance(input, dict):
-		return dict([(convert(key), convert(value)) for key, value in input.iteritems()])
+		return dict([(convert(key), convert(value)) for key, value in input.items()])
 	elif isinstance(input, list):
 		return [convert(element) for element in input]
 	elif isinstance(input, unicode):
