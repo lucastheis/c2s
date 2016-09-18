@@ -13,11 +13,10 @@ import os
 import sys
 
 from argparse import ArgumentParser, HelpFormatter
-from pickle import load
 from numpy import mean, corrcoef, unique
 from numpy.random import rand, randint
 from cmt.utils import random_select
-from c2s import train, predict, preprocess
+from c2s import train, predict, preprocess, load_data
 from c2s.experiment import Experiment
 
 def main(argv):
@@ -60,9 +59,8 @@ def main(argv):
 		return 0
 
 	data = []
-	for dataset in args.dataset:
-		with open(dataset) as handle:
-			data = data + load(handle)
+	for filepath in args.dataset:
+		data.extend(load_data(filepath))
 
 	if args.preprocess:
 		data = preprocess(data, args.verbosity)
