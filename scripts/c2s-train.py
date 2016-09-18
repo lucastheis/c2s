@@ -55,7 +55,7 @@ def main(argv):
 	experiment = Experiment()
 
 	if not args.dataset:
-		print 'You have to specify at least 1 dataset.'
+		print('You have to specify at least 1 dataset.')
 		return 0
 
 	data = []
