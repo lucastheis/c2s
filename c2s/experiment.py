@@ -8,7 +8,7 @@ Manage and display experimental results.
 __license__ = 'MIT License <http://www.opensource.org/licenses/mit-license.php>'
 __author__ = 'Lucas Theis <lucas@theis.io>'
 __docformat__ = 'epytext'
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 import sys
 import os
 import numpy
@@ -353,17 +353,17 @@ class Experiment:
             self.versions = res['versions']
             self.results = res['results']
             self.argv = res['argv'] \
-                if StrictVersion(res['version']) >= '0.3.1' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.3.1') else None
             self.script = res['script'] \
-                if StrictVersion(res['version']) >= '0.4.0' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.4.0') else None
             self.script_path = res['script_path'] \
-                if StrictVersion(res['version']) >= '0.4.0' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.4.0') else None
             self.cwd = res['cwd'] \
-                if StrictVersion(res['version']) >= '0.4.0' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.4.0') else None
             self.hostname = res['hostname'] \
-                if StrictVersion(res['version']) >= '0.4.0' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.4.0') else None
             self.id = res['id'] \
-                if StrictVersion(res['version']) >= '0.4.0' else None
+                if StrictVersion(res['version']) >= StrictVersion('0.4.0') else None
 
     def __getitem__(self, key):
         return self.results[key]
@@ -661,7 +661,7 @@ class XUnpickler(Unpickler):
         try:
             numpy_version = StrictVersion(numpy.__version__)
 
-            if numpy_version >= '1.5.0':
+            if numpy_version >= StrictVersion('1.5.0'):
                 if module == 'numpy.core.defmatrix':
                     module = 'numpy.matrixlib.defmatrix'
 
