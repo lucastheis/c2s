@@ -15,6 +15,8 @@ from pickle import load, dump
 from scipy.io import savemat
 from c2s import preprocess, load_data
 from c2s.utils import convert
+import numpy.random
+import cmt.utils
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__)
@@ -23,9 +25,15 @@ def main(argv):
 	parser.add_argument('--filter',    '-s', type=int,   default=0)
 	parser.add_argument('--fps',       '-f', type=float, default=100.,
 		help='Up- or downsample data to match this sampling rate (100 fps).' )
+	parser.add_argument('--seed',      '-S', type=int,  default=-1)
 	parser.add_argument('--verbosity', '-v', type=int,   default=1)
 
 	args = parser.parse_args(argv[1:])
+
+	# set RNG seed
+	if args.seed > -1:
+		numpy.random.seed(args.seed)
+		cmt.utils.seed(args.seed)
 
 	# load data
 	data = load_data(args.input)
