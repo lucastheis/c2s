@@ -18,6 +18,8 @@ from numpy.random import rand, randint
 from cmt.utils import random_select
 from c2s import train, predict, preprocess, load_data
 from c2s.experiment import Experiment
+import numpy.random
+import cmt.utils
 
 def main(argv):
 	parser = ArgumentParser(argv[0], description=__doc__,
@@ -48,9 +50,15 @@ def main(argv):
 		help='Amount of parameter regularization (filters are regularized for smoothness, default: %(default).1f).')
 	parser.add_argument('--preprocess',     '-p', type=int,   default=0,
 		help='If the data is not already preprocessed, this can be used to do it.')
+	parser.add_argument('--seed',           '-S', type=int,   default=-1)
 	parser.add_argument('--verbosity',      '-v', type=int,   default=1)
 
 	args, _ = parser.parse_known_args(argv[1:])
+
+	# set RNG seed
+	if args.seed > -1:
+		numpy.random.seed(args.seed)
+		cmt.utils.seed(args.seed)
 
 	experiment = Experiment()
 
