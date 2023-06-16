@@ -44,7 +44,7 @@ easier especially if you are planning to use Windows or Mac OS.
 If you use our code in your research, please cite the following paper:
 
 L. Theis, P. Berens, E. Froudarakis, J. Reimer, M. Roman-Roson, T. Baden, T. Euler, A. S. Tolias, et al.  
-[Benchmarking spike rate inference in population calcium imaging](http://bethgelab.org/publications/127/)  
+[Benchmarking spike rate inference in population calcium imaging](https://bethgelab.org/publication/2016_05_theis/)  
 Neuron, 90(3), 471-482, 2016
 
 The default model was trained on many datasets (together containing roughly 110,000 spikes) from
